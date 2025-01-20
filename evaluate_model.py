@@ -1,4 +1,6 @@
 from datetime import timedelta
+import argparse
+from typing import Dict
 from lighteval.logging.evaluation_tracker import EvaluationTracker
 from lighteval.models.vllm.vllm_model import VLLMModelConfig
 from lighteval.models.transformers.transformers_model import TransformersModelConfig
@@ -12,38 +14,49 @@ if is_accelerate_available():
 else:
     accelerator = None
 
-def main():
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
+    
+    Returns:
+        argparse.Namespace: Parsed command line arguments
+    """
+    parser = argparse.ArgumentParser(description='Evaluate model on math tasks')
+    parser.add_argument('--task', type=str, required=True,
+                       choices=['gsm8k', 'math', 'math_hard', 'math_500', 'aime24', 'amc23'],
+                       help='Task to evaluate')
+    parser.add_argument('--model', type=str, required=True,
+                       help='Model name or path')
+    parser.add_argument('--use_chat_template', action='store_true', default=False,
+                       help='Use chat template')
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Main function to run model evaluation."""
+    args = parse_args()
+    
     evaluation_tracker = EvaluationTracker(
         output_dir="./results",
         save_details=True,
-        push_to_hub=True,
-        hub_results_org="your user name",
+        push_to_hub=False,
     )
 
     pipeline_params = PipelineParameters(
         launcher_type=ParallelismManager.ACCELERATE,
-        env_config=EnvConfig(cache_dir="tmp/"),
-        # Remove the 2 parameters below once your configuration is tested
-        override_batch_size=1,
-        max_samples=1,
+        max_samples=1000,
         custom_tasks_directory="./math_evaluator/tasks.py",
+        env_config=EnvConfig(cache_dir="tmp/"),
+        override_batch_size=-1
     )
 
-    # model_config = VLLMModelConfig(
-    #         pretrained="HuggingFaceH4/zephyr-7b-beta",
-    #         dtype="float16",
-    #         use_chat_template=True,
-    # )
     model_config = TransformersModelConfig(
-        pretrained="openai-community/gpt2",
-        dtype="float16",
-        use_chat_template=True,
+        pretrained=args.model,
+        dtype="bfloat16",
+        use_chat_template=args.use_chat_template,
     )
-
-    task = "lighteval|math_hard_cot|4|0"
 
     pipeline = Pipeline(
-        tasks=task,
+        tasks=f"lighteval|{args.task}|4|1",
         pipeline_parameters=pipeline_params,
         evaluation_tracker=evaluation_tracker,
         model_config=model_config,
@@ -51,6 +64,7 @@ def main():
 
     pipeline.evaluate()
     pipeline.show_results()
+    pipeline.save_and_push_results()
 
 if __name__ == "__main__":
     main()

@@ -45,7 +45,7 @@ from sympy import (
 )
 from sympy.core.relational import Relational
 
-from .utils import timeout
+from math_evaluator.utils import timeout
 
 
 def safe_sympy_doit(a: Basic | MatrixBase):
