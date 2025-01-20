@@ -1,9 +1,12 @@
-# Math-verify
+# Math-Verify
 A robust mathematical expression evaluation system designed for assessing Large Language Model outputs in mathematical tasks. This evaluator achieves the highest accuracy and most correct scores compared to existing evaluators:
 
-- harness: 0.0802
-- qwen: 0.1288
-- math-verify: 0.1328 
+
+| Evaluator     | Score   |
+|---------------|---------|
+| Harness       | 0.0802  |
+| Qwen          | 0.1288  |
+| Math-Verify   | 0.1328  |
 
 ## Why Another Math Evaluator?
 
@@ -22,22 +25,22 @@ As result, this can lead to significant underestimation of model performance, in
 
 ### 2. Advanced Parsing Capabilities
 - Complete set theory support (Intervals, FiniteSets, set operations)
-- Unicode symbol substituion support (β -> beta)
-- Applies Latex fixes for common malformations (e.g. frac13 -> 1/3)
-- Equation and inequality parsing, with symbol assignment resolution (e.g. x = 1 -> 1)
-- Percentage best effort conversion (e.g. 10% -> 0.1)
-- Units in text handling (e.g. 10 cm -> 10)
-- Exact representation of the input expressions (0.333 -> Float(333, 3))
+- Unicode symbol substituion support (e.g. `β -> beta`)
+- Applies Latex fixes for common malformations (e.g. `frac13 -> 1/3`)
+- Equation and inequality parsing, with symbol assignment resolution (e.g. `x = 1 -> 1`)
+- Percentage best effort conversion (e.g. `10% -> 0.1`)
+- Units in text handling (e.g. `10 cm -> 10`)
+- Exact representation of the input expressions (e.g. `0.333 -> Float(333, 3)`)
 
 ### 3. Intelligent Expression Comparison
 - Both numerical and symbolic comparison support
 - Precise numerical comparison for numerical types with configurable rounding tolerance
 - Matrix expression equivalence validation
 - Set and interval comparison
-- Relation evaluation with flip support (e.g., a < 2 == 2 > a)
+- Relation evaluation with flip support (e.g., `a < 2 == 2 > a`)
 
 ## Usage
-If you already have a model outputs, format them into a csv file with 'answer', 'gold' columns.
+If you already have a model outputs, format them into a csv file with `answer`, `gold` columns.
 Then run the following command:
 ```bash
 python evaluate_model_outputs.py --input_csv <path_to_csv> (examples/model_outputs.csv) --output_csv <path_to_csv> (output.csv)
@@ -61,6 +64,9 @@ python extract_answers.py --input_csv <path_to_csv> (examples/sample_answers.csv
 ```
 
 ## Architecture
+
+![Architecture](./assets/flow.svg)
+
 
 The grading process follows a three-step algorithm:
 Answer Extraction -> Expression Common Representation Conversion (SymPy) -> Gold Comparison
