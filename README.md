@@ -1,11 +1,11 @@
 # Math-verify
-A robust mathematical expression evaluation system designed for assessing Large Language Model outputs in mathematical tasks. This evaluator achieves the highest accuracy and most correct scores compared to existing parsers:
+A robust mathematical expression evaluation system designed for assessing Large Language Model outputs in mathematical tasks. This evaluator achieves the highest accuracy and most correct scores compared to existing evaluators:
 
 - harness: 0.0802
 - qwen: 0.1288
 - math-verify: 0.1328 
 
-## Why Another Math Parser?
+## Why Another Math Evaluator?
 
 Existing math evaluators often fail to correctly assess model outputs due to:
 1. Strict format requirements (expecting exact patterns like "Final answer is X")
