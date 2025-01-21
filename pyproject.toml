@@ -22,7 +22,7 @@ dev = [
 ]
 
 inference = [
-    "lighteval[accelerate,vllm]",
+    "lighteval[accelerate]",
 ]
 
 # For the local package dependency
