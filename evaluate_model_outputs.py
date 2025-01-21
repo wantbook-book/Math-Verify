@@ -1,9 +1,8 @@
 import argparse
 import pandas as pd
-from typing import List, Dict, Any, Sequence
-from math_evaluator.metric import math_verify
-from math_evaluator.parser import LatexExtractionConfig
-from math_evaluator.tasks import ExprExtractionConfig
+from typing import Any
+from math_verify.metric import math_metric
+from math_verify.parser import LatexExtractionConfig, ExprExtractionConfig
 import sympy
 
 def parse_args():
@@ -61,7 +60,7 @@ def process_answers(df: pd.DataFrame, gold_is_latex: bool) -> pd.DataFrame:
     total_count = 0
     
     # Create the verification function
-    verify_func = math_verify(
+    verify_func = math_metric(
         gold_extraction_target=(LatexExtractionConfig() if gold_is_latex else ExprExtractionConfig(),),
         pred_extraction_target=(ExprExtractionConfig(), LatexExtractionConfig()),
         aggregation_function=max,

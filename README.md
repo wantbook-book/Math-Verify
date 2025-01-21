@@ -8,6 +8,20 @@ A robust mathematical expression evaluation system designed for assessing Large 
 | Qwen          | 0.1288  |
 | Math-Verify   | 0.1328  |
 
+## Installation
+
+```bash
+pip install math-verify
+```
+
+## Example Usage
+```python
+from math_verify import parse,verify
+gold = parse("${1,3} \\cup {2,4}$")
+answer = parse("${1,2,3,4}$")
+verify(gold, answer)
+```
+
 ## Why Another Math Evaluator?
 
 Existing math evaluators often fail to correctly assess model outputs due to:
@@ -39,7 +53,7 @@ As result, this can lead to significant underestimation of model performance, in
 - Set and interval comparison
 - Relation evaluation with flip support (e.g., `a < 2 == 2 > a`)
 
-## Usage
+## Advanced Usage
 If you already have a model outputs, format them into a csv file with `answer`, `gold` columns.
 Then run the following command:
 ```bash
@@ -71,7 +85,7 @@ python extract_answers.py --input_csv <path_to_csv> (examples/sample_answers.csv
 The grading process follows a three-step algorithm:
 Answer Extraction -> Expression Common Representation Conversion (SymPy) -> Gold Comparison
 
-1. **Answer Extraction** (see `math_evaluator/parser.py`): 
+1. **Answer Extraction** (see `math_verify/parser.py`): 
    Retrieves the answer from the model output in a format-agnostic manner.
    1. Regex patterns are prepared based on configuration, each with a priority indicating the order of application.
    2. Priorities range from the most concrete answer format to the most abstract.
@@ -95,7 +109,7 @@ Answer Extraction -> Expression Common Representation Conversion (SymPy) -> Gold
       - Complex numbers
       - Sets and intervals
 
-3. **Gold Comparison** (see `math_evaluator/grader.py`):
+3. **Gold Comparison** (see `math_verify/grader.py`):
    - Compares the parsed answer with the gold answer.
    1. Initially attempts string comparison and basic SymPy equality:
       - Direct string comparison after normalization

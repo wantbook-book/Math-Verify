@@ -29,9 +29,9 @@ from typing import Literal, Sequence
 import sympy
 from sympy import Basic, MatrixBase, Number
 from sympy.parsing import parse_expr
-from math_evaluator.grader import should_treat_as_complex
+from math_verify.grader import should_treat_as_complex
 from latex2sympy2_extended.latex2sympy2 import NormalizationConfig, normalize_latex, latex2sympy
-from math_evaluator.utils import timeout
+from math_verify.utils import timeout
 
 
 @dataclass(frozen=True)
@@ -353,3 +353,11 @@ def extract_target_from_pred(
         extracted_predictions += [fallbacks[0]]
 
     return extracted_predictions
+
+
+# Just a wrapper around extract_target_from_pred
+def parse(pred: str, extraction_config: Sequence[ExtractionTarget] = [LatexExtractionConfig(), ExprExtractionConfig()], fallback_mode: Literal["no_fallback", "first_match"] = "first_match"):
+    target_res = get_extraction_regexes(extraction_config)
+    return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode)
+
+

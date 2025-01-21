@@ -1,8 +1,8 @@
 ## Parser definition
 import logging
-from math_evaluator.grader import compare_gold_target
-from math_evaluator.parser import ExprExtractionConfig, ExtractionTarget, extract_target_from_pred, get_extraction_regexes
-from math_evaluator.utils import timeout
+from math_verify.grader import verify
+from math_verify.parser import ExprExtractionConfig, ExtractionTarget, extract_target_from_pred, get_extraction_regexes, parse
+from math_verify.utils import timeout
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from typing import Callable, Literal, Optional, Sequence
 
 
-def math_verify(
+def math_metric(
     gold_extraction_target: Sequence[ExtractionTarget] = (ExprExtractionConfig(),),
     pred_extraction_target: Sequence[ExtractionTarget] = (ExprExtractionConfig(),),
     aggregation_function: Callable[[list[float]], float] = max,
@@ -57,13 +57,10 @@ def math_verify(
         return (golds, predictions)
 
     def sample_level_fn(golds: list[str], predictions: list[str]) -> tuple[float, Optional[tuple[list[str], list[str]]]]:
-        gold_extraction_regexes = get_extraction_regexes(gold_extraction_target)
-        pred_extraction_regexes = get_extraction_regexes(pred_extraction_target)
-
         extracted_predictions = [
-            extract_target_from_pred(pred, pred_extraction_regexes, fallback_mode) for pred in predictions
+            parse(pred, pred_extraction_target) for pred in predictions
         ]
-        extracted_golds = [extract_target_from_pred(gold, gold_extraction_regexes, fallback_mode) for gold in golds]
+        extracted_golds = [parse(gold, gold_extraction_target) for gold in golds]
 
         # Assert on empty gold and warn on empty pred
         if any(len(g) == 0 for g in extracted_golds):
@@ -84,7 +81,7 @@ def math_verify(
         return (
             aggregation_function(
                 [
-                    (1.0 if any(compare_gold_target(gold, pred, precision) for gold in extracted_golds) else 0.0)
+                    (1.0 if any(verify(gold, pred, precision) for gold in extracted_golds) else 0.0)
                     for pred in extracted_predictions
                 ]
             ),

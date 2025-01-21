@@ -8,12 +8,12 @@ from lighteval.tasks.requests import Doc
 from lighteval.metrics.utils.metric_utils import SampleLevelMetric, MetricCategory, MetricUseCase
 from lighteval.metrics.dynamic_metrics import SampleLevelMetric
 
-from math_evaluator.metric import math_verify
-from math_evaluator.few_shots import GSM8K_FEW_SHOTS, MATH_HARD_FEW_SHOTS
+from math_verify.metric import math_metric
+from math_verify.few_shots import GSM8K_FEW_SHOTS, MATH_HARD_FEW_SHOTS
 import numpy as np
 
 
-from math_evaluator.parser import ExprExtractionConfig, LatexExtractionConfig
+from math_verify.parser import ExprExtractionConfig, LatexExtractionConfig
 
 
 logger = logging.getLogger(__name__)
@@ -145,7 +145,7 @@ math_hard_lighteval = [
         generation_size=1024,
         metric=[
             as_lighteval_metric(
-                math_verify(
+                math_metric(
                     gold_extraction_target=(LatexExtractionConfig(),),
                     pred_extraction_target=(LatexExtractionConfig(), ExprExtractionConfig()),
                     fallback_mode="first_match",
@@ -179,7 +179,7 @@ math_500_lighteval = [
         generation_size=1024,
         metric=[
             as_lighteval_metric(
-                math_verify(
+                math_metric(
                     gold_extraction_target=(LatexExtractionConfig(),),
                     pred_extraction_target=(LatexExtractionConfig(), ExprExtractionConfig()),
                     fallback_mode="first_match",
@@ -205,7 +205,7 @@ aime24_lighteval = [
         generation_size=1024,
         metric=[
             as_lighteval_metric(
-                math_verify(
+                math_metric(
                     gold_extraction_target=(LatexExtractionConfig(),),
                     pred_extraction_target=(LatexExtractionConfig(), ExprExtractionConfig()),
                     fallback_mode="first_match",
@@ -231,7 +231,7 @@ amc23_lighteval = [
         generation_size=1024,
         metric=[
             as_lighteval_metric(
-                math_verify(
+                math_metric(
                     gold_extraction_target=(ExprExtractionConfig(),),
                     pred_extraction_target=(LatexExtractionConfig(), ExprExtractionConfig()),
                     fallback_mode="first_match",
@@ -258,7 +258,7 @@ gsm8k_lighteval = [
         stop_sequence=["\nQuestion:", "\nProblem:", "\nquestion:", "\nproblem:"],
         metric=[
             as_lighteval_metric(
-                math_verify(
+                math_metric(
                     gold_extraction_target=(ExprExtractionConfig(),),
                     pred_extraction_target=(LatexExtractionConfig(), ExprExtractionConfig()),
                     fallback_mode="first_match",

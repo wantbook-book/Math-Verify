@@ -1,9 +1,7 @@
 import argparse
 import pandas as pd
-from typing import List, Dict, Any, Sequence
-from math_evaluator.parser import LatexExtractionConfig
-from math_evaluator.tasks import ExprExtractionConfig, get_extraction_regexes, extract_target_from_pred
-import sympy
+from typing import Any
+from math_verify.parser import LatexExtractionConfig, ExprExtractionConfig, parse
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Extract and evaluate answers using sympy')
@@ -39,12 +37,10 @@ def process_answers(df: pd.DataFrame) -> pd.DataFrame:
     
     # Set up extraction config and get regexes
     extraction_target = (ExprExtractionConfig(), LatexExtractionConfig())
-    extraction_regexes = get_extraction_regexes(extraction_target)
-    
     for _, row in df.iterrows():
         try:
             # Extract answer using regexes
-            extracted = extract_target_from_pred(row['answer'], extraction_regexes, "first_match")
+            extracted = parse(row['answer'], extraction_config=extraction_target)
             feedback = None
             extracted_answer = None
             if len(extracted) == 2:

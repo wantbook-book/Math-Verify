@@ -45,7 +45,7 @@ from sympy import (
 )
 from sympy.core.relational import Relational
 
-from math_evaluator.utils import timeout
+from math_verify.utils import timeout
 
 
 def safe_sympy_doit(a: Basic | MatrixBase):
@@ -410,8 +410,8 @@ def should_treat_as_complex(latex_str: str) -> bool:
     return bool(complex_number_pattern.search(latex_str))
 
 
-def compare_gold_target(
-    gold: list[Basic | MatrixBase | str], target: list[Basic | MatrixBase | str], precision: int
+def verify(
+    gold: list[Basic | MatrixBase | str] | Basic | MatrixBase | str, target: list[Basic | MatrixBase | str] | Basic | MatrixBase | str, precision: int=6
 ) -> bool:
     @timeout(timeout_seconds=10)
     def compare_single_extraction(gold: Basic | MatrixBase | str, target: Basic | MatrixBase | str) -> bool:
@@ -438,5 +438,10 @@ def compare_gold_target(
             return compare_single_extraction(g, t)
         except TimeoutError:
             return False
+    
+    if not isinstance(gold, list):
+        gold = [gold]
+    if not isinstance(target, list):
+        target = [target]
 
     return any(compare_single_extraction_wrapper(g, t) for g, t in product(gold, target))
