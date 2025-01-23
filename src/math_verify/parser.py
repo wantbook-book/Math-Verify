@@ -83,7 +83,7 @@ def lazy_expr_regex(expr_config: ExprExtractionConfig) -> list[tuple[re.Pattern[
     operators_re = "".join(operators)
     all_expr_chars = r"[\d\.\s" + operators_re + r"]"
     # Expression should have at minimum at least one operator and must start with a digit
-    expr_re = rf"-?\(?-?\d{all_expr_chars}*[{operators_re}]{all_expr_chars}+\)?"
+    expr_re = rf"(?P<expr>-?\(?-?\d{all_expr_chars}*[{operators_re}]{all_expr_chars}+\)?)"
 
     # Punctuation regexes
     full_stop_re = rf"\."
@@ -120,8 +120,6 @@ def lazy_expr_regex(expr_config: ExprExtractionConfig) -> list[tuple[re.Pattern[
 
 
     return [(re.compile(pattern), priority) for pattern, priority in regexes]
-
-
 @lru_cache(maxsize=1)
 def lazy_latex_regex(latex_config: LatexExtractionConfig) -> list[tuple[re.Pattern[str], int]]:
     # Only LaTeX expressions between delimiters
