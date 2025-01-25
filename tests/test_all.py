@@ -781,6 +781,11 @@ def test_math_extraction_edge_cases(gold, pred, expected):
             1,
         ),
         (
+            r" So the answer is: \[ \boxed{32349} \]",
+            r"is $\boxed{32, 349}$",
+            0,
+        ),
+        (
             r"Thus, the domain of the function \( f(x) \) is: \[ \boxed{(2, 12) \cup (12, 102)} \]",
             r"Thus, the answer is $x \in \boxed{(2,12) \cup (12,102)}$",
             1,
