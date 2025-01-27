@@ -1,7 +1,5 @@
 # Math-Verify
-A robust mathematical expression evaluation system designed for assessing Large Language Model outputs in mathematical tasks. This evaluator achieves the highest accuracy and most correct scores compared to existing evaluators:
-
-
+A robust mathematical expression evaluation system designed for assessing Large Language Model outputs in mathematical tasks. This evaluator achieves the highest accuracy and most correct scores compared to existing evaluators on MATH dataset:
 | Evaluator     | Score   |
 |---------------|---------|
 | Harness       | 0.0802  |
@@ -29,6 +27,16 @@ answer = parse("${1,2,3,4}$")
 verify(gold, answer)
 # >>> True
 ```
+
+## Extraction Targets
+The parser supports three main extraction targets:
+
+1. **LatexExtractionConfig** - Extracts LaTeX expressions with configurable options (see docstring) (e.g. '\[ \sqrt{2} \]')
+2. **ExprExtractionConfig** - Extracts plain mathematical expressions (e.g. '1/2')
+3. **StringExtractionConfig** - Extracts literal strings (e.g. 'A')
+
+By default, the parser uses both LatexExtractionConfig and ExprExtractionConfig for maximum flexibility in extracting mathematical expressions from model outputs.
+
 
 ## Why Another Math Evaluator?
 
