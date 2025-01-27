@@ -83,8 +83,69 @@ class ExprExtractionConfig:
 
     try_extract_without_anchor: bool = True
 
+@dataclass(frozen=True)
+class StringExtractionConfig:
+    """Config for extracting literal strings.
 
-ExtractionTarget = LatexExtractionConfig | ExprExtractionConfig
+    Attributes:
+        strings (tuple[str]): The strings to extract
+        try_extract_without_anchor (bool): Whether to try extracting strings without requiring specific anchors like "answer:" or "final answer is"
+    """
+
+    strings: tuple[str, ...] = field(default_factory=lambda: ("A", "B", "C", "D"))
+    try_extract_without_anchor: bool = True
+    lowercase: bool = True
+
+
+ExtractionTarget = LatexExtractionConfig | ExprExtractionConfig | StringExtractionConfig
+
+@lru_cache(maxsize=10)
+def lazy_string_regex(string_extraction_config: StringExtractionConfig) -> list[tuple[re.Pattern[str], int]]:
+    # First get indices to predict
+    string_keys = f"(?P<string_keys>{'|'.join([re.escape(i) for i in string_extraction_config.strings])})"
+
+    # The strings are either surrounded with <space>**answer**., or '<space>answer.' or the same without the dot
+    full_stop_re = rf"\."
+    comma_re = rf","
+    colon_re = rf":"
+    space_re = rf"\s"
+
+    answer_prefix_re = rf"(^|{space_re})(?:\*\*)?"
+    answer_suffix_re = rf"(?:\*\*)?(?:{full_stop_re}|{comma_re}|{colon_re}|{space_re}|$)"
+    answer_re = f"{answer_prefix_re}{string_keys}{answer_suffix_re}"
+    answer_re_start = rf"^(?:\*\*)?{string_keys}{answer_suffix_re}"
+
+    answer_word = f"(?i:answer)"
+
+    regexes = []
+
+    final_answer_prefixed_re = rf"(?i:final answer is)\:?\s*{string_keys}\.?\s?I hope"
+
+    # To allow stuff like "final answer is to your question"
+    final_answer_prefixed_just_is = rf"(?i:final answer.{{0,100}}?)\s+is\:?\s*{string_keys}"
+    regexes.extend(
+        [
+            (final_answer_prefixed_re, 0),
+            (final_answer_prefixed_just_is, 50),
+        ]
+    )
+
+    regexes.extend(
+        [
+            # Most specific patterns first
+            (f"{answer_word}{colon_re}.{{0,50}}?{answer_re}", 100),
+            # Answer word patterns
+            (f"{answer_word}.{{0,50}}?{answer_re}", 200),
+        ]
+    )
+
+    if string_extraction_config.try_extract_without_anchor:
+        # Start of line patterns
+        regexes.append((answer_re_start, 250))
+        # Plain string patterns
+        regexes.append((answer_re, 300))
+
+    return [(re.compile(pattern), priority) for pattern, priority in regexes]
 
 
 # All of the regexes are cached, to avoid repeated compiling during processing of same task
@@ -222,22 +283,11 @@ def get_extraction_regexes(
             (lazy_latex_regex(target_type), target_type)
             if isinstance(target_type, LatexExtractionConfig)
             else (lazy_expr_regex(target_type), target_type)
+            if isinstance(target_type, ExprExtractionConfig)
+            else (lazy_string_regex(target_type), target_type)
         )
         for target_type in target_types
     ]
-
-    # Sort the extraction res so that order is indices, latex, expr
-    def get_target_type_order(target_type: ExtractionTarget) -> int:
-        match target_type:
-            case LatexExtractionConfig():
-                return 1
-            case ExprExtractionConfig():
-                return 2
-
-    extraction_regexes = sorted(
-        extraction_regexes, key=lambda x: get_target_type_order(x[1])
-    )
-
     return extraction_regexes
 
 
@@ -302,7 +352,7 @@ def convert_to_pct(number: Number):
     return sympy.Mul(number, sympy.Rational(1, 100), evaluate=False)
 
 
-@lru_cache(maxsize=1000)
+@lru_cache(maxsize=20)
 @timeout(timeout_seconds=5)
 def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple[sympy.Expr | str | None, str]:
 
@@ -330,6 +380,14 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple
     return parsed_latex, normalized_latex
 
 
+def extract_string(match: re.Match, string_config: StringExtractionConfig):
+    extracted_str = match.group("string_keys")
+    parsed_str = extracted_str
+    if string_config.lowercase:
+        parsed_str = extracted_str.lower()
+    return parsed_str, extracted_str
+
+
 def extract_match(
     match: re.Match, target_type: ExtractionTarget
 ) -> tuple[Basic | MatrixBase | str | None, str]:
@@ -348,6 +406,8 @@ def extract_match(
         return extract_latex(match, target_type)
     elif isinstance(target_type, ExprExtractionConfig):
         return extract_expr(match)
+    elif isinstance(target_type, StringExtractionConfig):
+        return extract_string(match, target_type)
 
 
 def extract_target_from_pred(
