@@ -31,7 +31,7 @@ verify(gold, answer)
 ## Extraction Targets
 The parser supports three main extraction targets:
 
-1. **LatexExtractionConfig** - Extracts LaTeX expressions with configurable options (see docstring) (e.g. '\[ \sqrt{2} \]')
+1. **LatexExtractionConfig** - Extracts LaTeX expressions with configurable options (see docstring) (e.g. '\[ \sqrt{2} \]'). Do note that the latex must be placed in latex environment to be parsable.
 2. **ExprExtractionConfig** - Extracts plain mathematical expressions (e.g. '1/2')
 3. **StringExtractionConfig** - Extracts literal strings (e.g. 'A')
 
