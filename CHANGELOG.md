@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.1]
+
+### Added
+- Fix bug with \boxed expressions. Boxed expression have no ending stopped so they will extract until }. This is fine as normalization will then extract the content. Issue was that if we have multiple of them, it would take all of them no matter whether they are connected or not. So "\boxed{1} ahhh no it's \boxed{2}" would be parsed as "\boxed{1,2}. This is now fixed.
+
+## [0.4.0]
 
 ### Added
 - Support for multiple expressions joined by "and"/"or" in latex parsing
