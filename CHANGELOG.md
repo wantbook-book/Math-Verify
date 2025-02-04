@@ -1,4 +1,19 @@
 # Changelog
+
+## [0.4.3]
+
+### Changed
+- Replaced `FiniteSet` from `sympy` with `FiniteSet` from `latex2sympy2_extended.sets` in `src/math_verify/grader.py` and `src/math_verify/parser.py`.
+- Modified `sympy_deep_compare_set_and_tuple` and `sympy_compare_sets` functions to use `SympyFiniteSet` for better compatibility with `latex2sympy2_extended`.
+- Updated `is_assignment_relation` to use `is_expr_of_only_symbols` instead of `is_assignment_symbol`.
+- Improved sorting logic in `sympy_deep_compare_set_and_tuple` to handle `TimeoutError`.
+
+### Added
+- New test cases in `tests/test_numina_cases.py` for enhanced expression comparison, including complex expressions and boxed expressions.
+
+### Fixed
+- Fixed issues with expression comparison logic, ensuring more accurate results when comparing sets and tuples. 
+
 ## [0.4.2]
 - Bump latex2sympy2_extended to 1.0.2
 

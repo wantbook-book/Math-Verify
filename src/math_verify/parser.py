@@ -27,7 +27,8 @@ from itertools import groupby
 from typing import Literal, Sequence
 
 import sympy
-from sympy import Basic, FiniteSet, MatrixBase, Number
+from sympy import Basic, MatrixBase, Number
+from latex2sympy2_extended.sets import FiniteSet
 from sympy.parsing import parse_expr
 from math_verify.grader import should_treat_as_complex
 from latex2sympy2_extended.latex2sympy2 import (
@@ -458,7 +459,7 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_
                 all_elements.extend(expr.args)
             else:
                 all_elements.append(expr)
-        return sympy.FiniteSet(*all_elements), " and ".join(latex_strs)
+        return FiniteSet(*all_elements), " and ".join(latex_strs)
     
     # Otherwise return the single expression
     return latex_exprs[0], latex_strs[0]

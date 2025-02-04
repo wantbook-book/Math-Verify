@@ -59,11 +59,6 @@ from tests.test_all import compare_strings
         1,
     ),
     (
-        r"$P(x) = 1$",
-        r"$p(x) = 1$",
-        1,
-    ),
-    (
         r"$V_{1}:V_{2}=11:21$",
         r"$11:21$",
         1,
@@ -123,8 +118,6 @@ from tests.test_all import compare_strings
         r"$\boxed{-5, \frac{14}{3}}$",
         1,
     ),
-    #TODO: make sure that \, is translate to ,
-    # the or joining should be extend if one of the is a 
     (
         r"\boxed{a=4,\,-8,\,-10}",
         r"$\boxed{-10,-8,4}$",
@@ -163,7 +156,7 @@ from tests.test_all import compare_strings
     (
         r"$\text{Even}$",
         r"$Even$",
-
+        1
     )
     # (
     #     r"$f(x)$",

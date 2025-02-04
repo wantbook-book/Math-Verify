@@ -21,16 +21,17 @@
 # SOFTWARE.
 
 # Heavily inspired by https://github.com/QwenLM/Qwen2.5-Math and https://github.com/huggingface/lm-evaluation-harness
+from functools import lru_cache
 import re
 from itertools import product
 
+from latex2sympy2_extended.sets import FiniteSet
 from sympy import (
     E,
     And,
     Basic,
     EmptySet,
     Eq,
-    FiniteSet,
     Float,
     GreaterThan,
     Interval,
@@ -45,13 +46,16 @@ from sympy import (
     StrictLessThan,
     Symbol,
     Tuple,
+    default_sort_key,
+    ordered,
     simplify,
 )
 from sympy.core.relational import Relational
 from sympy.core.function import UndefinedFunction
+from sympy import FiniteSet as SympyFiniteSet
 
 from math_verify.utils import timeout
-from latex2sympy2_extended import is_assignment_symbol
+from latex2sympy2_extended import is_expr_of_only_symbols
 
 
 def safe_sympy_doit(a: Basic | MatrixBase):
@@ -165,7 +169,7 @@ def sympy_symbolic_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
     return False
 
 
-def sympy_deep_compare_set_and_tuple(gold: FiniteSet | Tuple, pred: FiniteSet | Tuple, precision: int) -> bool:
+def sympy_deep_compare_set_and_tuple(gold: SympyFiniteSet | Tuple, pred: SympyFiniteSet | Tuple, precision: int) -> bool:
     """Compare two finite sets by comparing each element with given precision.
 
     Args:
@@ -179,9 +183,39 @@ def sympy_deep_compare_set_and_tuple(gold: FiniteSet | Tuple, pred: FiniteSet | 
     Note: in order to fully support finite sets, we should ideally do kartesian product comparison
     but this is not implemented yet. We kinda hope sympy will order the elements.
     """
+    def unwrap_eq(s):
+        if is_assignment_relation(s):
+            return take_last_relation(s).rhs
+        return s
+
+    def sort_key(x):
+        try:
+            return default_sort_key(unwrap_eq(x).evalf())
+        except TimeoutError:
+            raise
+        except:
+            return default_sort_key(unwrap_eq(x))
+
+
     # This ensures it works for {1/3} and {0.333333}
-    if len(gold) == len(pred) and all(sympy_expr_eq(a, b, precision) for a, b in zip(gold.args, pred.args)):
-        return True
+    if len(gold) == len(pred):
+        if isinstance(gold, SympyFiniteSet):
+            gold_args = list(ordered(gold.args, keys=sort_key, default=False))
+            pred_args = list(ordered(pred.args, keys=sort_key, default=False))
+        
+        elif isinstance(gold, Tuple) and isinstance(pred, FiniteSet):
+            # We treat the pred as tuple too
+            pred_args = pred._unsorted_args
+            gold_args = gold.args
+
+        elif isinstance(pred, SympyFiniteSet):
+            pred_args = list(ordered(pred.args, keys=sort_key, default=False))
+            gold_args = gold.args
+        else:
+            gold_args = gold.args
+            pred_args = pred.args
+        
+        return all(sympy_expr_eq(a, b, precision) for a, b in zip(gold_args, pred_args))
 
     return False
 
@@ -297,8 +331,8 @@ def sympy_compare_sets(gold: Set | Basic | MatrixBase | Tuple, pred: Set | Basic
         True if sets are equal by any comparison method, False otherwise
     """
     # Convert non-sets to singleton sets
-    a_set = gold if isinstance(gold, (Set, Tuple)) else FiniteSet(gold)
-    b_set = pred if isinstance(pred, (Set, Tuple)) else FiniteSet(pred)
+    a_set = gold if isinstance(gold, (Set, Tuple)) else SympyFiniteSet(gold)
+    b_set = pred if isinstance(pred, (Set, Tuple)) else SympyFiniteSet(pred)
 
     # If both are intervals, use interval comparison
     if isinstance(a_set, Interval) and isinstance(b_set, Interval):
@@ -314,16 +348,16 @@ def sympy_compare_sets(gold: Set | Basic | MatrixBase | Tuple, pred: Set | Basic
         return True
 
     # For finite sets, compare elements
-    if isinstance(a_set, (FiniteSet, Tuple)) and isinstance(b_set, (FiniteSet, Tuple)):
+    if isinstance(a_set, (SympyFiniteSet, Tuple)) and isinstance(b_set, (SympyFiniteSet, Tuple)):
         return sympy_deep_compare_set_and_tuple(a_set, b_set, precision)
 
     # Because (1,2) is parsed as Interval(1,2,left_open=True,right_open=True), it could have that the 
     # correct is (1,2) and predicted is 1,2, which is parsed as Set(1,2)
-    if isinstance(a_set, Interval) and isinstance(b_set, (FiniteSet, Tuple)):
+    if isinstance(a_set, Interval) and isinstance(b_set, (SympyFiniteSet, Tuple)):
         if a_set.is_open and len(b_set) == 2:
             return sympy_deep_compare_set_and_tuple(Tuple(a_set.start, a_set.end), b_set, precision)
     
-    if isinstance(b_set, Interval) and isinstance(a_set, (FiniteSet, Tuple)):
+    if isinstance(b_set, Interval) and isinstance(a_set, (SympyFiniteSet, Tuple)):
         if b_set.is_open and len(a_set) == 2:
             return sympy_deep_compare_set_and_tuple(a_set, Tuple(b_set.start, b_set.end), precision)
 
@@ -401,11 +435,11 @@ def is_assignment_relation(expr: Basic | MatrixBase) -> bool:
     Returns:
         bool: True if expr is a relational expression or And of relations, False otherwise
     """
-    if isinstance(expr, Eq) and is_assignment_symbol(expr.lhs):
+    if isinstance(expr, Eq) and is_expr_of_only_symbols(expr.lhs):
         return True
     
     if isinstance(expr, And) and len(expr.args) > 0:
-        return all(isinstance(arg, Eq) for arg in expr.args) and is_assignment_symbol(expr.args[0].lhs)
+        return all(isinstance(arg, Eq) for arg in expr.args) and is_expr_of_only_symbols(expr.args[0].lhs)
         
     return False
     
@@ -484,12 +518,12 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, precision:
     # We assume that the gold never needs to be simplified, so we don't handle that case
     # e.g 1+1+1=3 will never be simplified to 3; it would be possible to do so with lhs-rhs == 0, but we assume the gold is at its most simplified form.
     # The new latex2sympy2 will actually convert such cases automatically, but so this is in theory not needed
-    if is_assignment_relation(gold) and not is_relation(pred):
+    if is_assignment_relation(gold) and not is_equation(pred):
         gold = take_last_relation(gold).rhs
 
     # Here we respect the gold and simplify accordingly, thus any of
     # k=x+1+z or 1+1+1=3 will be simplified to rhs
-    if is_equation(pred) and not is_relation(gold):
+    if is_equation(pred) and not is_equation(gold):
         pred = take_last_relation(pred).rhs
 
     if is_relation(gold) and isinstance(pred, Set):
