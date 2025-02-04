@@ -25,6 +25,7 @@ import sympy
 
 from math_verify import parse, verify, LatexExtractionConfig, ExprExtractionConfig
 from math_verify.grader import sympy_expr_eq
+from sympy import FiniteSet, Function
 
 
 """
@@ -38,6 +39,7 @@ def compare_strings(
     pred: str,
     match_types: list[str] = ["latex", "expr"],
     precision: int = 6,
+    strict: bool=True
 ):
     """Helper function to compare strings using the math extraction metrics"""
     # Convert string match_types to ExtractionTarget objects
@@ -50,7 +52,7 @@ def compare_strings(
 
     gold_parsed = parse(gold, extraction_targets)
     pred_parsed = parse(pred, extraction_targets)
-    return verify(gold_parsed, pred_parsed, precision)
+    return verify(gold_parsed, pred_parsed, precision, strict)
 
 
 
@@ -152,13 +154,27 @@ def test_sets_handling(gold, pred, expected):
         ("$1/3$", "$\\frac{1}{3} \\text{meters}$", 1),
         ("$1/3$", "$\\frac{1}{3} \\textbf{meters}$", 1),
         # Last = is considered
-        ("$1/3$", "$\\k = \\frac{1}{3}$", 1),
+        ("$1/3$", "$k = \\frac{1}{3}$", 1),
         ("$1/3$", "$\\frac{1}{3} \\textbf{meters}$", 1),
     ],
 )
 def test_latex_notation(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex"]) == expected
 
+
+@pytest.mark.parametrize(
+    "gold,pred,expected",
+    [
+        ("$28\\%$", "28 percent", 1),
+        ("$28\\%$", "28 pct", 1),
+        ("$28\\%$", "28 %", 1),
+        ("$28\\%$", "$28$ %", 1),
+        ("$28\\%$", "$28$ percent", 1),
+        ("$28\\%$", "$\\boxed{28}$ pct", 1),
+    ],
+)
+def test_percent_notation(gold, pred, expected):
+    assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected
 
 @pytest.mark.parametrize(
     "gold,pred,expected",
@@ -422,7 +438,7 @@ def test_latex_notation_math(gold, pred, expected):
         ),
         # Test incomplete equation
         (
-            "$a +z = 0$",
+            "$a +3z = 0$",
             "$0$",
             0,
         ),
@@ -680,7 +696,7 @@ def test_math_extraction_edge_cases(gold, pred, expected):
             r"Since $AP:PB = 1:4,$ we can write \[\frac{\overrightarrow{A} - \overrightarrow{P}}{1} = \frac{\overrightarrow{B} - \overrightarrow{P}}{4}.\]Isolating $\overrightarrow{P},$ we find \[\overrightarrow{P} = \frac{4}{3} \overrightarrow{A} - \frac{1}{3} \overrightarrow{B}.\]Thus, $(t,u) = \boxed{\left( \frac{4}{3}, -\frac{1}{3} \right)}.$",
             1,
         ),
-        (r"$(3,1)$", r"${1,3}$", 1),
+        (r"$(3,1)$", r"${1,3}$", 0),
         (r"$(1,3)$", r"${1,3}$", 1),
         # Issue: Therefore preference
         (
@@ -790,10 +806,12 @@ def test_math_extraction_edge_cases(gold, pred, expected):
             r"Thus, the answer is $x \in \boxed{(2,12) \cup (12,102)}$",
             1,
         ),
-
+        (
+            r"$\text{E}$",
+            r"$E$",
+            1,
+        ),
     ],
 )
 def test_math_extraction_additional_cases(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected
-
-

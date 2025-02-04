@@ -34,6 +34,7 @@ def timeout(timeout_seconds: int = 10):  # noqa: C901
         On Unix systems, uses a signal-based alarm approach which is more efficient as it doesn't require spawning a new process.
         On Windows systems, uses a multiprocessing-based approach since signal.alarm is not available. This will incur a huge performance penalty.
     """
+    # timeout_seconds = 110000
     if os.name == "posix":
         # Unix-like approach: signal.alarm
         import signal
