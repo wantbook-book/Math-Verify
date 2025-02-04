@@ -107,7 +107,7 @@ from tests.test_all import compare_strings
         r"$${1,2,3}$$",
         r"\boxed{1},\boxed{2},\boxed{3}",
         1,
-    )
+    ),
 ])
 def test_numina_cases(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected

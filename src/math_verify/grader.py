@@ -377,6 +377,39 @@ def is_relation(expr: Basic | MatrixBase) -> bool:
         
     return False
 
+def is_equation(expr: Basic | MatrixBase) -> bool:
+    """Check if an expression is an equation.
+    
+    Args:
+        expr: The expression to check
+    Returns:
+        bool: True if expr is an equation, False otherwise
+    """
+    if isinstance(expr, Eq):
+        return True
+    
+    if isinstance(expr, And) and len(expr.args) > 0:
+        return all(isinstance(arg, Eq) for arg in expr.args)
+        
+    return False
+
+def is_assignment_relation(expr: Basic | MatrixBase) -> bool:
+    """Check if an expression is an assignment relation. E.g a=1
+    
+    Args:
+        expr: The expression to check
+    Returns:
+        bool: True if expr is a relational expression or And of relations, False otherwise
+    """
+    if isinstance(expr, Eq) and is_expr_of_only_symbols(expr.lhs):
+        return True
+    
+    if isinstance(expr, And) and len(expr.args) > 0:
+        return all(isinstance(arg, Eq) for arg in expr.args) and is_expr_of_only_symbols(expr.args[0].lhs)
+        
+    return False
+    
+
 def take_last_relation(expr: And | Relational) -> Relational:
     """Take the last relation from an And expression."""
     if isinstance(expr, And):
@@ -451,12 +484,12 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, precision:
     # We assume that the gold never needs to be simplified, so we don't handle that case
     # e.g 1+1+1=3 will never be simplified to 3; it would be possible to do so with lhs-rhs == 0, but we assume the gold is at its most simplified form.
     # The new latex2sympy2 will actually convert such cases automatically, but so this is in theory not needed
-    if isinstance(gold, Eq) and not is_relation(pred) and is_expr_of_only_symbols(gold.lhs):
+    if is_assignment_relation(gold) and not is_relation(pred):
         gold = take_last_relation(gold).rhs
 
     # Here we respect the gold and simplify accordingly, thus any of
     # k=x+1+z or 1+1+1=3 will be simplified to rhs
-    if isinstance(pred, Eq) and not isinstance(gold, Eq):
+    if is_equation(pred) and not is_relation(gold):
         pred = take_last_relation(pred).rhs
 
     if is_relation(gold) and isinstance(pred, Set):
