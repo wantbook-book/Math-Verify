@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from itertools import groupby
 from typing import Literal, Sequence
@@ -67,7 +67,7 @@ class LatexExtractionConfig:
             units=True,
             malformed_operators=True,
             nits=True,
-            boxed=True,
+            boxed="all",
             equations=True,
         )
     )
@@ -267,10 +267,7 @@ def make_latex_env_pattern(prefix: str = "", context: Literal["boxed", "plain"] 
         rf"(?<!\\)\\\((?P<{prefix}latexInlineParenthesis>{inline_content_parenthesis})(?<!\\)\\\)",
         rf"\s\[(?P<{prefix}latexInlineBracket>{inline_content_bracket})\]\s",
     ]
-    if context == "boxed":
-        # allow also matching plain boxed
-        patterns.append(rf"(?P<{prefix}latexBoxed>\\boxed{{.+}})")
-    elif context == "plain":
+    if context == "plain":
         simple_number = r"-?\d+(?:[.,]\d+)?"
         patterns.append(rf"(?P<{prefix}latexFraction>-?\\frac{{{simple_number}}}{{{simple_number}}})")
     
@@ -319,6 +316,9 @@ def lazy_latex_regex(
         next_groups = ''.join([rf"(?:\s*(?:and|or)\s*{make_latex_env_pattern(f'next{i}_', context='boxed')})?" for i in range(1, 6)])
         latex_re_boxed = rf"{latex_re_boxed}{next_groups}"
         regexes.append((latex_re_boxed, latex_config.boxed_match_priority))
+        # Match plain boxed, the issue with plain boxed is that it's impossible to know where it stops, so if there are
+        # till last }. We do the actuall extraction in the normalization step.
+        regexes.append((rf"(?P<first_latexBoxed>\\boxed{{.+}})", latex_config.boxed_match_priority))
 
     return [(re.compile(pattern, re.DOTALL), priority) for pattern, priority in regexes]
 
@@ -422,10 +422,18 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_
     all_latex = list(filter(lambda x: x is not None, [first_latex_group] + next_latex_groups))
     
     for latex, name in all_latex:
-        is_percentage = True if match.groupdict().get(f"{name.split('_')[0]}_percent") else False
+        name_without_prefix = name.split('_')[0]
+        group_name = name.split('_')[1] if len(name.split('_')) > 1 else None
+        is_percentage = True if match.groupdict().get(f"{name_without_prefix}_percent") else False
+        
+        # Use modified config if group name is 'boxed'
+        config = latex_config.normalization_config
+        if group_name == 'latexBoxed':
+            config = replace(config, boxed="last")  # Use replace to modify single field
+            
         normalized_latex = normalize_latex(
             latex,
-            config=latex_config.normalization_config,
+            config=config,
         )
         latex_strs.append(normalized_latex)
         
