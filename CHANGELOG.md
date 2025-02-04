@@ -1,4 +1,6 @@
 # Changelog
+## [0.4.2]
+- Bump latex2sympy2_extended to 1.0.2
 
 ## [0.4.1]
 
