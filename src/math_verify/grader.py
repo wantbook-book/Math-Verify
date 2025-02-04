@@ -51,7 +51,7 @@ from sympy.core.relational import Relational
 from sympy.core.function import UndefinedFunction
 
 from math_verify.utils import timeout
-from latex2sympy2_extended import is_expr_of_only_symbols
+from latex2sympy2_extended import is_assignment_symbol
 
 
 def safe_sympy_doit(a: Basic | MatrixBase):
@@ -401,11 +401,11 @@ def is_assignment_relation(expr: Basic | MatrixBase) -> bool:
     Returns:
         bool: True if expr is a relational expression or And of relations, False otherwise
     """
-    if isinstance(expr, Eq) and is_expr_of_only_symbols(expr.lhs):
+    if isinstance(expr, Eq) and is_assignment_symbol(expr.lhs):
         return True
     
     if isinstance(expr, And) and len(expr.args) > 0:
-        return all(isinstance(arg, Eq) for arg in expr.args) and is_expr_of_only_symbols(expr.args[0].lhs)
+        return all(isinstance(arg, Eq) for arg in expr.args) and is_assignment_symbol(expr.args[0].lhs)
         
     return False
     

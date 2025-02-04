@@ -613,6 +613,6 @@ def parse(
     try:
         target_res = get_extraction_regexes(extraction_config)
         return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode, timeout_seconds=parsing_timeout)
-    except Exception as e:
+    except:
         print(f"Error during parsing: {e}")
         return []

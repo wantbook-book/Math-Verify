@@ -108,6 +108,26 @@ from tests.test_all import compare_strings
         r"\boxed{1},\boxed{2},\boxed{3}",
         1,
     ),
+    (
+        r"$$x+z=1$$",
+        r"$$1$$",
+        0,
+    ),
+    (
+        r"$$|AB|=1$$",
+        r"$$1$$",
+        1,
+    ),
+    (
+        r"$$A:B=1$$",
+        r"$$1$$",
+        1,
+    ),
+    (
+        r"$$f(x)=1$$",
+        r"$$1$$",
+        1,
+    ),
 ])
 def test_numina_cases(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected
