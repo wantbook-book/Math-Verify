@@ -90,7 +90,7 @@ pip install 'math-verify[inference]'
 
 Run the following command to evaluate a model:
 ```bash
-python evaluate_model.py --model <model_name> (Qwen/Qwen2.5-72B-Instruct) --use_chat_template (True) --task <task_name> (math_hard)
+python evaluate_model.py --model <model_name> (HuggingFaceTB/SmolLM2-135M) --use_chat_template (True) --task <task_name> (amc23)
 ```
 
 Lastly if you want to only extract the answers from model outputs, you can run the following command:
