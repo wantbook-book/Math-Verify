@@ -85,7 +85,7 @@ If you want to evaluate a model from ground up, we have provided a script for en
 
 This script requires the optional "inference" dependencies to be installed, e.g. as follows:
 ```bash
-pip install math-verify[inference]
+pip install 'math-verify[inference]'
 ```
 
 Run the following command to evaluate a model:
