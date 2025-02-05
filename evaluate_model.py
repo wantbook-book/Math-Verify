@@ -27,6 +27,8 @@ def parse_args() -> argparse.Namespace:
                        help='Model name or path')
     parser.add_argument('--use_chat_template', action='store_true', default=False,
                        help='Use chat template')
+    parser.add_argument('--override_bs', type=int, default=-1,
+                       help='Batch size; -1 for automatic batch size')
     return parser.parse_args()
 
 
@@ -45,7 +47,7 @@ def main() -> None:
         max_samples=1000,
         custom_tasks_directory=Path(__file__).parent / "src/math_verify/tasks.py",
         env_config=EnvConfig(cache_dir="tmp/"),
-        override_batch_size=-1
+        override_batch_size=args.override_bs,
     )
 
     model_config = TransformersModelConfig(
