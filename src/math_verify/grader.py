@@ -76,7 +76,7 @@ def safe_sympy_doit(a: Basic | MatrixBase):
         return a.doit()
     except TimeoutError:
         raise
-    except:  # noqa: E722
+    except Exception:
         pass
     return a
 
@@ -139,7 +139,7 @@ def sympy_numeric_eq(a: Basic | MatrixBase, b: Basic | MatrixBase, precision: in
             return (a - b).evalf(chop=True) == 0  # type: ignore
         except TimeoutError:
             raise
-        except:  # noqa: E722
+        except Exception:
             pass
 
     return False
@@ -163,7 +163,7 @@ def sympy_symbolic_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
             return True
     except TimeoutError:
         raise
-    except:  # noqa: E722
+    except Exception:
         pass
 
     return False
@@ -193,7 +193,7 @@ def sympy_deep_compare_set_and_tuple(gold: SympyFiniteSet | Tuple, pred: SympyFi
             return default_sort_key(unwrap_eq(x).evalf())
         except TimeoutError:
             raise
-        except:
+        except Exception:
             return default_sort_key(unwrap_eq(x))
 
 
@@ -260,7 +260,7 @@ def sympy_compare_relational(gold: Relational | And, pred: Relational | And, pre
             return sympy_expr_eq(a.lhs - a.rhs, b.rhs - b.lhs, precision)  # type: ignore
         except TimeoutError:
             raise
-        except:  # noqa: E722
+        except Exception:
             pass
         return False
 
@@ -271,7 +271,7 @@ def sympy_compare_relational(gold: Relational | And, pred: Relational | And, pre
             return True
     except TimeoutError:
         raise
-    except:  # noqa: E722
+    except Exception:
         pass
 
     # Check flipped inequalities (a <= b equals b >= a)
@@ -314,7 +314,7 @@ def sympy_str_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
             return True
     except TimeoutError:
         raise
-    except:  # noqa: E722
+    except Exception:
         pass
     return False
 
@@ -482,7 +482,7 @@ def unwrap_fcs(expr: Basic | MatrixBase) -> Basic | MatrixBase:
             return expr.func(*new_args)
     except TimeoutError:
         raise
-    except:  # noqa: E722
+    except Exception:
         pass
 
     return expr
@@ -511,7 +511,7 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, precision:
                 pred = pred.subs(list(zip(pred_variables, gold_variables)))
         except TimeoutError:
             raise
-        except:  # noqa: E722
+        except Exception:
             pass
 
     # If the reference is relational, but the target is not, it's possible it's a case of answer=x+1+z, so we just take x+1+z
@@ -533,7 +533,7 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, precision:
             gold = unwrap_fcs(gold).as_set()
         except TimeoutError:
             raise
-        except:
+        except Exception:
             pass
 
     # Start with simple str and expr comparisson as it's the fastest
@@ -671,7 +671,7 @@ def verify(
     def compare_single_extraction_wrapper(g, t):
         try:
             return compare_single_extraction(g, t)
-        except:
+        except Exception:
             return False
     
     if not isinstance(gold, list):

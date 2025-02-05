@@ -75,7 +75,7 @@ def math_metric(
         str_preds = None
         try:
             str_preds = get_str_preds_with_timeout(extracted_predictions, extracted_golds)
-        except:  # noqa: E722
+        except Exception:
             logger.warning("Timeout when adding extracted predictions and golds to specific")
 
         return (

@@ -391,7 +391,7 @@ def extract_expr(match: re.Match, timeout_seconds: int = 5) -> tuple[str | sympy
                 parse_expr_with_timeout(expr.replace("\n", " ").replace("^", "**"), timeout_seconds=timeout_seconds),
                 expr,
             )
-        except:  # noqa: E722
+        except Exception:
             pass
     return None, expr
 
@@ -443,7 +443,7 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_
             if is_percentage:
                 parsed_latex = convert_to_pct(parsed_latex)
             latex_exprs.append(parsed_latex)
-        except:  # noqa: E722
+        except Exception:
             latex_exprs.append(None)
             pass
     
@@ -614,6 +614,6 @@ def parse(
     try:
         target_res = get_extraction_regexes(extraction_config)
         return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode, timeout_seconds=parsing_timeout)
-    except:
+    except Exception:
         print(f"Error during parsing: {e}")
         return []
