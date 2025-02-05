@@ -1,6 +1,8 @@
 # Changelog
+## [0.5.1]
+- Remove empty excepts, so that KeyboardInterrupt is not caught
 
-## [0.4.3]
+## [0.5.0]
 
 ### Changed
 - Replaced `FiniteSet` from `sympy` with `FiniteSet` from `latex2sympy2_extended.sets` in `src/math_verify/grader.py` and `src/math_verify/parser.py`.
