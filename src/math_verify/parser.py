@@ -284,7 +284,7 @@ def lazy_latex_regex(
     # Pattern for multiple latex environments connected by and/or
     # Create patterns for up to 5 connected expressions
     first_latex_group = make_latex_env_pattern('first_')
-    next_groups = ''.join([rf"(?:\s*(?:and|or)\s*{make_latex_env_pattern(f'next{i}_')})?" for i in range(1, 6)])
+    next_groups = ''.join([rf"(?:\s*(?:and|or|,)\s*{make_latex_env_pattern(f'next{i}_')})?" for i in range(1, 6)])
     
     latex_envs_re = rf"(?:{first_latex_group}{next_groups})"
     colon_re = rf":"
@@ -314,7 +314,7 @@ def lazy_latex_regex(
     # This ensures that boxed is matched right after the final answer xxxx
     if latex_config.boxed_match_priority >= 0:
         latex_re_boxed = make_latex_env_pattern(prefix='first_', context='boxed')
-        next_groups = ''.join([rf"(?:\s*(?:and|or)\s*{make_latex_env_pattern(f'next{i}_', context='boxed')})?" for i in range(1, 6)])
+        next_groups = ''.join([rf"(?:\s*(?:and|or|,)\s*{make_latex_env_pattern(f'next{i}_', context='boxed')})?" for i in range(1, 6)])
         latex_re_boxed = rf"{latex_re_boxed}{next_groups}"
         regexes.append((latex_re_boxed, latex_config.boxed_match_priority))
         # Match plain boxed, the issue with plain boxed is that it's impossible to know where it stops, so if there are
@@ -614,6 +614,6 @@ def parse(
     try:
         target_res = get_extraction_regexes(extraction_config)
         return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode, timeout_seconds=parsing_timeout)
-    except Exception:
+    except Exception as e:
         print(f"Error during parsing: {e}")
         return []

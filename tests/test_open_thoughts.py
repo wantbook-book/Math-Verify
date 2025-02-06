@@ -149,6 +149,26 @@ from tests.test_all import compare_strings
         r"$\boxed{10^{\frac{\sqrt{13} - 5}{6}}} \quad \text{and} \quad \boxed{10^{-\frac{5 + \sqrt{13}}{6}}}$",
         1,
     ),
+    (
+        r"\boxed{1} and and and or thus but \boxed{2} and \boxed{3}",
+        r"$\boxed{2,3}$",
+        1,
+    ),
+    (
+        r"\boxed{1} and and and or thus but \boxed{2} and \boxed{3}",
+        r"$\boxed{1,2,3}$",
+        0,
+    ),
+    (
+        r"\boxed{1} no no no or no no \boxed{2}",
+        r"$\boxed{1,2}$",
+        0,
+    ),
+    (
+        r"\boxed{1} no no no or no no \boxed{2}",
+        r"$\boxed{1,2}$",
+        0,
+    ),
 ])
 def test_numina_cases(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected

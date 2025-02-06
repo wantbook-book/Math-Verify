@@ -65,7 +65,7 @@ from tests.test_all import compare_strings
     ),
     (
         r"$(2,1),(1,2),(-1,-20),(-20,-1)$",
-        r"solutions are:\n\n\\[\n\\boxed{(1, 2)}, \\boxed{(2, 1)}, \\boxed{(-1, -20)}, \\boxed{(-20, -1)}\n\\]",
+        "solutions are:\n\n\\[\n\\boxed{(1, 2)}, \\boxed{(2, 1)}, \\boxed{(-1, -20)}, \\boxed{(-20, -1)}\n\\]",
         1,
     ),
     (
