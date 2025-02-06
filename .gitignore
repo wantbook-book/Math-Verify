@@ -50,3 +50,7 @@ logs/
 
 # PyPI
 .pypirc
+
+# Outputs
+results/
+tmp/
