@@ -1,4 +1,9 @@
 # Changelog
+
+## [0.5.2]
+- Bump latex2sympy2_extended to 1.0.6, which fixes a bug with boxed normalization
+- Allow more separators in latex expressions
+
 ## [0.5.1]
 - Remove empty excepts, so that KeyboardInterrupt is not caught
 
