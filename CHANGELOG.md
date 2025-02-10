@@ -1,11 +1,12 @@
 # Changelog
 
 ## [0.5.3-pre]
-Address obstacles to running `evaluate_model.py`:
-- Update the README command and installation instructions.
-- Update `inference` dependencies to "lighteval" instead of "lighteval[accelerate]" to reflect the fact that `accelerate` is now a main rather than optional dependency of `lighteval`.
-- Fix import path passed to `lighteval/tasks/registry.py`.
-- Provide `--override-bs` as a CLI parameter as an alternative to automatic batch size selection, which does not work well on all hardware.
+- Improve process of running `evaluate_model.py`:
+  - Update the README command and installation instructions.
+  - Update `inference` dependencies to "lighteval" instead of "lighteval[accelerate]" to reflect the fact that `accelerate` is now a main rather than optional dependency of `lighteval`.
+  - Fix import path passed to `lighteval/tasks/registry.py`.
+  - Provide `--override-bs` as a CLI parameter as an alternative to automatic batch size selection, which does not work well on all hardware.
+  - Use available accelerators.
 
 ## [0.5.2]
 - Bump latex2sympy2_extended to 1.0.6, which fixes a bug with boxed normalization
