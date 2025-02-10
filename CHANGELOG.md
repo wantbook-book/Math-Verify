@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.3]
+## [0.5.3-pre]
 Address obstacles to running `evaluate_model.py`:
 - Update the README command and installation instructions.
 - Update `inference` dependencies to "lighteval" instead of "lighteval[accelerate]" to reflect the fact that `accelerate` is now a main rather than optional dependency of `lighteval`.
