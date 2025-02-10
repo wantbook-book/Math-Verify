@@ -54,6 +54,7 @@ def main() -> None:
         pretrained=args.model,
         dtype="bfloat16",
         use_chat_template=args.use_chat_template,
+        accelerator=accelerator,
     )
 
     pipeline = Pipeline(
