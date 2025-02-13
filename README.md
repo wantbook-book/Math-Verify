@@ -83,9 +83,14 @@ If you want to evaluate a model from ground up, we have provided a script for en
 - AMC23
 - AIME24
 
+This script requires the optional "inference" dependencies to be installed, e.g. as follows:
+```bash
+pip install 'math-verify[inference]'
+```
+
 Run the following command to evaluate a model:
 ```bash
-python evaluate_model.py --model_name <model_name> (Qwen/Qwen2.5-72B-Instruct) --use_chat_template (True) --dataset <dataset_name> (math_hard)
+python evaluate_model.py --model <model_name> (HuggingFaceTB/SmolLM2-135M) --use_chat_template (True) --task <task_name> (amc23)
 ```
 
 Lastly if you want to only extract the answers from model outputs, you can run the following command:

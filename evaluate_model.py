@@ -1,5 +1,6 @@
 from datetime import timedelta
 import argparse
+from pathlib import Path
 from lighteval.logging.evaluation_tracker import EvaluationTracker
 from lighteval.models.transformers.transformers_model import TransformersModelConfig
 from lighteval.pipeline import ParallelismManager, Pipeline, PipelineParameters
@@ -26,6 +27,8 @@ def parse_args() -> argparse.Namespace:
                        help='Model name or path')
     parser.add_argument('--use_chat_template', action='store_true', default=False,
                        help='Use chat template')
+    parser.add_argument('--override_bs', type=int, default=-1,
+                       help='Batch size; -1 for automatic batch size')
     return parser.parse_args()
 
 
@@ -42,9 +45,9 @@ def main() -> None:
     pipeline_params = PipelineParameters(
         launcher_type=ParallelismManager.ACCELERATE,
         max_samples=1000,
-        custom_tasks_directory="./math_verify/tasks.py",
+        custom_tasks_directory="math_verify.tasks",
         env_config=EnvConfig(cache_dir="tmp/"),
-        override_batch_size=-1
+        override_batch_size=args.override_bs,
     )
 
     model_config = TransformersModelConfig(
