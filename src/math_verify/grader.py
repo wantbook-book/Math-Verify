@@ -392,8 +392,17 @@ def sympy_compare_symbols(gold: Basic | MatrixBase, pred: Basic | MatrixBase) ->
         concat_gold = ''.join(arg.name if isinstance(arg, Symbol) else 'e' for arg in gold.args)
         return pred.name.lower() == concat_gold.lower()
 
-    # Default comparison
-    return gold == pred
+    # Simple
+    if isinstance(gold, Symbol) and isinstance(pred, Symbol):
+        g_name = gold.name
+        p_name = pred.name
+        if len(p_name) > 1:
+            p_name = p_name.lower()
+        if len(g_name) > 1:
+            g_name = g_name.lower()
+        return g_name == p_name
+    
+    return False
 
 def is_relation(expr: Basic | MatrixBase) -> bool:
     """Check if an expression is a relational expression.
