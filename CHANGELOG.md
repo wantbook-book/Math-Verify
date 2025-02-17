@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.4]
+- Added support for multiple antlr4 runtimes:
+    - `antlr4-python3-runtime==4.13.2`
+    - `antlr4-python3-runtime==4.11.0`
+    - `antlr4-python3-runtime==4.9.3`
+
 ## [0.5.3]
 Address obstacles to running `evaluate_model.py`:
 - Update the README command and installation instructions.
