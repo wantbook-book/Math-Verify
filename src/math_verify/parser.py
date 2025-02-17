@@ -39,6 +39,9 @@ from latex2sympy2_extended.latex2sympy2 import (
 from math_verify.utils import timeout
 from latex2sympy2_extended.latex2sympy2 import NormalizationConfig
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class LatexExtractionConfig:
@@ -615,5 +618,5 @@ def parse(
         target_res = get_extraction_regexes(extraction_config)
         return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode, timeout_seconds=parsing_timeout)
     except Exception as e:
-        print(f"Error during parsing: {e}")
+        logger.exception("Error during parsing")
         return []

@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.5.4-pre]
+- Added logging to grader and parser
+
 ## [0.5.3]
 - Added support for multiple antlr4 runtimes:
     - `antlr4-python3-runtime==4.13.2`

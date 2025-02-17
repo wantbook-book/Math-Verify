@@ -22,6 +22,7 @@
 
 # Heavily inspired by https://github.com/QwenLM/Qwen2.5-Math and https://github.com/huggingface/lm-evaluation-harness
 from functools import lru_cache
+import logging
 import re
 from itertools import product
 
@@ -56,6 +57,8 @@ from sympy import FiniteSet as SympyFiniteSet
 
 from math_verify.utils import timeout
 from latex2sympy2_extended import is_expr_of_only_symbols
+
+logger = logging.getLogger(__name__)
 
 
 def safe_sympy_doit(a: Basic | MatrixBase):
@@ -671,7 +674,8 @@ def verify(
     def compare_single_extraction_wrapper(g, t):
         try:
             return compare_single_extraction(g, t)
-        except Exception:
+        except Exception as e:
+            logger.exception(f"Error comparing {g} and {t}")
             return False
     
     if not isinstance(gold, list):
