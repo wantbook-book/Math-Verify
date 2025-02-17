@@ -45,7 +45,7 @@ def main() -> None:
     pipeline_params = PipelineParameters(
         launcher_type=ParallelismManager.ACCELERATE,
         max_samples=1000,
-        custom_tasks_directory=Path(__file__).parent / "src/math_verify/tasks.py",
+        custom_tasks_directory="math_verify.tasks",
         env_config=EnvConfig(cache_dir="tmp/"),
         override_batch_size=args.override_bs,
     )

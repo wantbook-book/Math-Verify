@@ -1,17 +1,18 @@
 # Changelog
 
-## [0.5.4]
+## [0.5.3]
 - Added support for multiple antlr4 runtimes:
     - `antlr4-python3-runtime==4.13.2`
     - `antlr4-python3-runtime==4.11.0`
     - `antlr4-python3-runtime==4.9.3`
 
-## [0.5.3]
-Address obstacles to running `evaluate_model.py`:
-- Update the README command and installation instructions.
-- Update `inference` dependencies to "lighteval" instead of "lighteval[accelerate]" to reflect the fact that `accelerate` is now a main rather than optional dependency of `lighteval`.
-- Fix import path passed to `lighteval/tasks/registry.py`.
-- Provide `--override-bs` as a CLI parameter as an alternative to automatic batch size selection, which does not work well on all hardware.
+## [0.5.3-pre]
+- Improve process of running `evaluate_model.py`:
+  - Update the README command and installation instructions.
+  - Update `inference` dependencies to "lighteval" instead of "lighteval[accelerate]" to reflect the fact that `accelerate` is now a main rather than optional dependency of `lighteval`.
+  - Fix import path passed to `lighteval/tasks/registry.py`.
+  - Provide `--override-bs` as a CLI parameter as an alternative to automatic batch size selection, which does not work well on all hardware.
+  - Use available accelerators.
 
 ## [0.5.2]
 - Bump latex2sympy2_extended to 1.0.6, which fixes a bug with boxed normalization
