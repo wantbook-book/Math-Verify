@@ -1,7 +1,8 @@
 # Changelog
 
-## [0.5.4-pre]
+## [0.5.4]
 - Added logging to grader and parser
+- Fixed bug with imports of antlr4 runtime
 
 ## [0.5.3]
 - Added support for multiple antlr4 runtimes:
