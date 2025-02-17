@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 
 [project.optional-dependencies]
 inference = [
-    "lighteval @ git+https://github.com/huggingface/lighteval.git@86f62259f105ae164f655e0b91c92a823a742724#egg=lighteval[math]"
+    "lighteval[math]"
 ]
 
 antlr4_9_3 = [
