@@ -248,7 +248,7 @@ def sympy_compare_relational(gold: Relational | And, pred: Relational | And, flo
         True if relations are equivalent, False otherwise
     """
 
-    if isinstance(gold, And):
+    if isinstance(gold, And) and isinstance(pred, And):
         return all(sympy_compare_relational(g, p, float_rounding, numeric_precision) for g, p in zip(gold._unsorted_args, pred._unsorted_args))
 
     # Helper to check if expressions are equivalent when flipped
@@ -299,12 +299,7 @@ def sympy_str_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
     if a == nan or a == zoo:
         raise ValueError("Can't evaluate nan or zoo")
     try:
-        # Structural equality, the cheapest but the dumbest one, it will fail for a + b vs b + a
-        if a == b:
-            return True
-        # Then do a simple str comparison
-        if str(a).strip() == str(b).strip():
-            return True
+        return a == b
     except Exception:
         pass
     return False
@@ -335,8 +330,11 @@ def sympy_compare_sets(gold: Set | Basic | MatrixBase | Tuple, pred: Set | Basic
         return True
 
     # If both are sets, check if they are equal
-    if isinstance(a_set, Set) and isinstance(b_set, Set) and a_set.symmetric_difference(b_set).is_empty:
-        return True
+    try:
+        if isinstance(a_set, Set) and isinstance(b_set, Set) and a_set.symmetric_difference(b_set).is_empty:
+            return True
+    except Exception:
+        pass
 
     # For finite sets, compare elements
     if isinstance(a_set, (SympyFiniteSet, Tuple)) and isinstance(b_set, (SympyFiniteSet, Tuple)):
@@ -619,7 +617,7 @@ def verify(
     float_rounding: int=6,
     numeric_precision: int=15,
     strict: bool=True,
-    timeout_seconds: int=3
+    timeout_seconds: int=5
 ) -> bool:
     """Verifies if the target expression matches the gold expression using multiple comparison strategies.
 
@@ -689,10 +687,12 @@ def verify(
         try:
             return compare_single_extraction(g, t)
         except Exception as e:
-            logger.exception(f"Error comparing: gold:{g} target:{t}")
+            #! Do not attempt to print out the g and t during handling of exception
+            # Because a) it can throw an exception itself and b) it can cause it to be stuck forever during str conversion
+            logger.exception(f"Error during comparison")
             return False
         except TimeoutException:
-            logger.error(f"Timeout comparing: gold:{g} target:{t}")
+            logger.error(f"Timeout during comparison")
             return False
     
     if not isinstance(gold, list):

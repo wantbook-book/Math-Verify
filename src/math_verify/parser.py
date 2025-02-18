@@ -602,7 +602,7 @@ def parse(
     ],
     fallback_mode: Literal["no_fallback", "first_match"] = "first_match",
     extraction_mode: Literal["first_match", "any_match"] = "any_match",
-    parsing_timeout: int = 3,
+    parsing_timeout: int = 5,
 ):
     """Extracts and parses mathematical expressions from a prediction string.
 
