@@ -25,6 +25,7 @@ from functools import lru_cache
 import logging
 import re
 from itertools import product
+from math_verify.errors import TimeoutException
 
 from latex2sympy2_extended.sets import FiniteSet
 from sympy import (
@@ -78,8 +79,6 @@ def safe_sympy_doit(a: Basic | MatrixBase):
     """
     try:
         return a.doit()
-    except TimeoutError:
-        raise
     except Exception:
         pass
     return a
@@ -141,8 +140,6 @@ def sympy_numeric_eq(a: Basic | MatrixBase, b: Basic | MatrixBase, float_roundin
     else:
         try:
             return (a - b).evalf(chop=True, n=numeric_precision) == 0  # type: ignore
-        except TimeoutError:
-            raise
         except Exception:
             pass
 
@@ -165,8 +162,6 @@ def sympy_symbolic_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
             return True
         elif isinstance(a_b_diff, Basic) and a_b_diff.is_zero:
             return True
-    except TimeoutError:
-        raise
     except Exception:
         pass
 
@@ -195,8 +190,6 @@ def sympy_deep_compare_set_and_tuple(gold: SympyFiniteSet | Tuple, pred: SympyFi
     def sort_key(x):
         try:
             return default_sort_key(unwrap_eq(x).evalf())
-        except TimeoutError:
-            raise
         except Exception:
             return default_sort_key(unwrap_eq(x))
 
@@ -262,8 +255,6 @@ def sympy_compare_relational(gold: Relational | And, pred: Relational | And, flo
     def are_flipped_inequalities_equal(a: Relational, b: Relational) -> bool:
         try:
             return sympy_expr_eq(a.lhs - a.rhs, b.rhs - b.lhs, float_rounding, numeric_precision)  # type: ignore
-        except TimeoutError:
-            raise
         except Exception:
             pass
         return False
@@ -273,8 +264,6 @@ def sympy_compare_relational(gold: Relational | And, pred: Relational | And, flo
     try:
         if type(gold) == type(pred) and sympy_expr_eq(gold.lhs - gold.rhs, pred.lhs - pred.rhs, float_rounding, numeric_precision):  # type: ignore
             return True
-    except TimeoutError:
-        raise
     except Exception:
         pass
 
@@ -316,8 +305,6 @@ def sympy_str_eq(a: Basic | MatrixBase, b: Basic | MatrixBase) -> bool:
         # Then do a simple str comparison
         if str(a).strip() == str(b).strip():
             return True
-    except TimeoutError:
-        raise
     except Exception:
         pass
     return False
@@ -490,8 +477,6 @@ def unwrap_fcs(expr: Basic | MatrixBase) -> Basic | MatrixBase:
         new_args = [unwrap_fcs(arg) for arg in expr.args]
         if new_args:
             return expr.func(*new_args)
-    except TimeoutError:
-        raise
     except Exception:
         pass
 
@@ -519,8 +504,6 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, float_roun
             pred_variables = pred.free_symbols
             if len(gold_variables) == len(pred_variables):
                 pred = pred.subs(list(zip(pred_variables, gold_variables)))
-        except TimeoutError:
-            raise
         except Exception:
             pass
 
@@ -555,8 +538,6 @@ def sympy_expr_eq(gold: Basic | MatrixBase, pred: Basic | MatrixBase, float_roun
         # We also unwrap the functions because othewise it creates some conditional set based on the function name
         try:
             gold = unwrap_fcs(gold).as_set()
-        except TimeoutError:
-            raise
         except Exception:
             pass
 
@@ -699,7 +680,10 @@ def verify(
         try:
             return compare_single_extraction(g, t)
         except Exception as e:
-            logger.exception(f"Error comparing {g} and {t}")
+            logger.exception(f"Error comparing: gold:{g} target:{t}")
+            return False
+        except TimeoutException:
+            logger.error(f"Timeout comparing: gold:{g} target:{t}")
             return False
     
     if not isinstance(gold, list):

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.2-pre]
+- Made parsing timeout to be global not per extraction to avoid too long extraction time
+- Changed timeout exception to be a custom exception so that it won't be caught by the default exception handler
+- Fixed bug with 0,xxx not being parsed as float
+
 ## [0.6.0]
 - Added support for setting numeric precision for numeric evaluation
 - Fixed bug with expression with =

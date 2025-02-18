@@ -86,6 +86,7 @@ def compare_strings(
         # Test m2
         ("1000.99", "so the number is 10 which is 1,000.99m²", 1),
         ("1000.99", "not it's not 10 it's 1,000.99m²", 1),
+        ("0,111", "0.111", 1),
         # Test correct extraction of not correct answer
         ("2", "AZYUK2A", 0),
     ],
