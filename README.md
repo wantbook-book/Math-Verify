@@ -7,10 +7,17 @@ A robust mathematical expression evaluation system designed for assessing Large 
 | Math-Verify   | 0.1328  |
 
 ## Installation
+Math-Verify currently supports multiple antlr4 runtimes:
+- `antlr4-python3-runtime==4.13.2`
+- `antlr4-python3-runtime==4.11.0`
+- `antlr4-python3-runtime==4.9.3`
 
+To install Math-Verify with a specific antlr4 runtime, use the following command:
 ```bash
-pip install math-verify
+pip install math-verify[antlr4_13_2]
 ```
+
+We recommend always specifying the antlr4 runtime to avoid any potential issues.
 
 ## Example Usage
 ```python

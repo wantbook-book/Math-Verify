@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.6.2-pre]
+- Made parsing timeout to be global not per extraction to avoid too long extraction time
+- Changed timeout exception to be a custom exception so that it won't be caught by the default exception handler
+- Fixed bug with 0,xxx not being parsed as float
+
+## [0.6.0]
+- Added support for setting numeric precision for numeric evaluation
+- Fixed bug with expression with =
+- Deprecated `equations` parameter in `NormalizationConfig`, as it is now handled by the parser
+- Fixed processing of Assignment relations
+- Bumped latex2sympy2_extended to 1.0.9
+
+## [0.5.4]
+- Added logging to grader and parser
+- Fixed bug with imports of antlr4 runtime
+
+## [0.5.3]
+- Added support for multiple antlr4 runtimes:
+    - `antlr4-python3-runtime==4.13.2`
+    - `antlr4-python3-runtime==4.11.0`
+    - `antlr4-python3-runtime==4.9.3`
+
 ## [0.5.3-pre]
 - Improve process of running `evaluate_model.py`:
   - Update the README command and installation instructions.

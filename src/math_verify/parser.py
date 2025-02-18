@@ -25,6 +25,7 @@ from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from itertools import groupby
 from typing import Literal, Sequence
+from math_verify.errors import TimeoutException
 
 import sympy
 from sympy import Basic, MatrixBase, Number
@@ -38,6 +39,9 @@ from latex2sympy2_extended.latex2sympy2 import (
 )
 from math_verify.utils import timeout
 from latex2sympy2_extended.latex2sympy2 import NormalizationConfig
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -69,7 +73,7 @@ class LatexExtractionConfig:
             malformed_operators=True,
             nits=True,
             boxed="all",
-            equations=True,
+            equations=False,
         )
     )
 
@@ -157,8 +161,8 @@ def lazy_expr_regex(
     # Basic number patterns (no LaTeX)
     number_re = (
         # Format 1: Numbers with thousand separators (e.g., "1,234.56" or "1 234.56")
-        r"(?:"
-        r"(?P<integer1>-?\d{1,3}(?:[ ,]\d{3})+)(?P<decimal1>\.\d+)?|"
+        r"(?<!\d)(?:"
+        r"(?P<integer1>-?[1-9]\d{0,2}(?:[ ,]\d{3})+)(?P<decimal1>\.\d+)?|"
         # Format 2: Simple numbers with decimal point or comma (e.g., "123.45" or "123,45")
         r"(?P<integer2>-?\d+)(?P<decimal2>[.,]\d+)|"
         # Format 3: Decimal part only (e.g., ".123")
@@ -344,18 +348,29 @@ def get_extraction_regexes(
 
 # Small cache, to catche repeated calls invalid parsing
 @lru_cache(maxsize=20)
-def parse_latex_with_timeout(latex: str, timeout_seconds: int):
-    return timeout(timeout_seconds)(latex2sympy)(
-        latex, is_real=not should_treat_as_complex(latex), convert_degrees=False, normalization_config=None
-    )
+def parse_latex_cached(latex: str):
+    # First try to parse the latex as is
+    try:
+        return latex2sympy(
+            latex, is_real=not should_treat_as_complex(latex), convert_degrees=False, normalization_config=None
+        )
+    except Exception as e:
+        # If that fails, try to parse just the last equation
+        last_eq_latex = get_last_eq(latex)
+        if last_eq_latex != latex:
+            return latex2sympy(
+                last_eq_latex, is_real=not should_treat_as_complex(last_eq_latex), convert_degrees=False, normalization_config=None
+            )
+        else:
+            raise e
 
 
 @lru_cache(maxsize=20)
-def parse_expr_with_timeout(expr: str, timeout_seconds: int):
-    return timeout(timeout_seconds)(parse_expr)(expr, evaluate=False)
+def parse_expr_cached(expr: str):
+    return parse_expr(expr, evaluate=False)
 
 
-def extract_expr(match: re.Match, timeout_seconds: int = 5) -> tuple[str | sympy.Expr | None, str]:
+def extract_expr(match: re.Match) -> tuple[str | sympy.Expr | None, str]:
     # First combine the number
     groups = match.groupdict()
     # Expr group will always exist because every regex has it
@@ -388,7 +403,7 @@ def extract_expr(match: re.Match, timeout_seconds: int = 5) -> tuple[str | sympy
     if expr:
         try:
             return (
-                parse_expr_with_timeout(expr.replace("\n", " ").replace("^", "**"), timeout_seconds=timeout_seconds),
+                parse_expr_cached(expr.replace("\n", " ").replace("^", "**")),
                 expr,
             )
         except Exception:
@@ -400,8 +415,18 @@ def convert_to_pct(number: Number):
     return sympy.Mul(number, sympy.Rational(1, 100), evaluate=False)
 
 
+equation_split_regex = re.compile(r"(?<!\\|\<|\!|\>)=")
+def get_last_eq(latex: str):
+    # This is to ensure that a=1,b=2 is not splitted
+    if not "," in latex and not ";" in latex:
+        eq_parts = equation_split_regex.split(latex)
+        # We only shorten if there are more than 2 parts, otherwise we keep equation as is
+        if len(eq_parts) > 2:
+            return eq_parts[-1]
+    return latex
+
 @lru_cache(maxsize=20)
-def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_seconds: int) -> tuple[sympy.Expr | str | None, str]:
+def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple[sympy.Expr | str | None, str]:
     latex_exprs = []
     latex_strs = []
     
@@ -439,7 +464,7 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_
         latex_strs.append(normalized_latex)
         
         try:
-            parsed_latex = parse_latex_with_timeout(normalized_latex, timeout_seconds=timeout_seconds)
+            parsed_latex = parse_latex_cached(normalized_latex)
             if is_percentage:
                 parsed_latex = convert_to_pct(parsed_latex)
             latex_exprs.append(parsed_latex)
@@ -474,7 +499,7 @@ def extract_string(match: re.Match, string_config: StringExtractionConfig):
 
 
 def extract_match(
-    match: re.Match, target_type: ExtractionTarget, timeout_seconds: int
+    match: re.Match, target_type: ExtractionTarget
 ) -> tuple[Basic | MatrixBase | str | None, str]:
     """Extracts the match from the regex match.
 
@@ -488,9 +513,9 @@ def extract_match(
             - The string representation of the extracted text
     """
     if isinstance(target_type, LatexExtractionConfig):
-        return extract_latex(match, target_type, timeout_seconds=timeout_seconds)
+        return extract_latex(match, target_type)
     elif isinstance(target_type, ExprExtractionConfig):
-        return extract_expr(match, timeout_seconds=timeout_seconds)
+        return extract_expr(match)
     elif isinstance(target_type, StringExtractionConfig):
         return extract_string(match, target_type)
 
@@ -498,7 +523,6 @@ def extract_match(
 def extract_target_from_pred(
     pred: str,
     target_res: list[tuple[list[tuple[re.Pattern[str], int]], ExtractionTarget]],
-    timeout_seconds: int,
     fallback_mode: Literal["no_fallback", "first_match"] = "no_fallback",
     extraction_mode: Literal["first_match", "any_match"] = "any_match",
 ):
@@ -547,7 +571,7 @@ def extract_target_from_pred(
 
         # Try to extract from each match, starting from rightmost
         for match, _, _, target_type in matches_with_pos:
-            extracted_match, str_fallback = extract_match(match, target_type, timeout_seconds=timeout_seconds)
+            extracted_match, str_fallback = extract_match(match, target_type)
 
             match_found = True
             if str_fallback:
@@ -594,8 +618,8 @@ def parse(
             - "first_match": Include the first string match even if parsing failed
         extraction_mode (Literal["first_match", "any_match"], optional): Strategy for extracting matches. Defaults to "any_match".
             - "first_match": Stop after finding the first match
-            - "any_match": Try to extract all possible matches
-        parsing_timeout (int, optional): Maximum time in seconds to spend parsing each expression. Defaults to 5.
+            - "any_match": Try to extract all possible matches, stops after first sucesful parsing attempt
+        parsing_timeout (int, optional): Maximum time in seconds to spend parsing each expression. Defaults to 3.
 
     Returns:
         list: List of extracted predictions. Each prediction can be:
@@ -613,7 +637,10 @@ def parse(
     """
     try:
         target_res = get_extraction_regexes(extraction_config)
-        return extract_target_from_pred(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode, timeout_seconds=parsing_timeout)
-    except Exception as e:
-        print(f"Error during parsing: {e}")
+        return timeout(timeout_seconds=parsing_timeout)(extract_target_from_pred)(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode)
+    except Exception:
+        logger.exception(f"Error parsing: {pred}")
+        return []
+    except TimeoutException:
+        logger.error(f"Timeout during parsing: {pred}")
         return []

@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import os
+from math_verify.errors import TimeoutException
 
 
 def timeout(timeout_seconds: int = 10):  # noqa: C901
@@ -40,7 +41,7 @@ def timeout(timeout_seconds: int = 10):  # noqa: C901
 
         def decorator(func):
             def handler(signum, frame):
-                raise TimeoutError("Operation timed out!")
+                raise TimeoutException("Operation timed out!")
 
             def wrapper(*args, **kwargs):
                 old_handler = signal.getsignal(signal.SIGALRM)
@@ -80,7 +81,7 @@ def timeout(timeout_seconds: int = 10):  # noqa: C901
                     # Timeout: Terminate the process
                     p.terminate()
                     p.join()
-                    raise TimeoutError("Operation timed out!")
+                    raise TimeoutException("Operation timed out!")
 
                 # If we got here, the process completed in time.
                 success, value = q.get()
