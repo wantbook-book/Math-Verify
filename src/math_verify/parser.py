@@ -72,7 +72,7 @@ class LatexExtractionConfig:
             malformed_operators=True,
             nits=True,
             boxed="all",
-            equations=True,
+            equations=False,
         )
     )
 
@@ -348,9 +348,20 @@ def get_extraction_regexes(
 # Small cache, to catche repeated calls invalid parsing
 @lru_cache(maxsize=20)
 def parse_latex_with_timeout(latex: str, timeout_seconds: int):
-    return timeout(timeout_seconds)(latex2sympy)(
-        latex, is_real=not should_treat_as_complex(latex), convert_degrees=False, normalization_config=None
-    )
+    # First try to parse the latex as is
+    try:
+        return timeout(timeout_seconds)(latex2sympy)(
+            latex, is_real=not should_treat_as_complex(latex), convert_degrees=False, normalization_config=None
+        )
+    except Exception as e:
+        # If that fails, try to parse just the last equation
+        last_eq_latex = get_last_eq(latex)
+        if last_eq_latex != latex:
+            return timeout(timeout_seconds)(latex2sympy)(
+                last_eq_latex, is_real=not should_treat_as_complex(last_eq_latex), convert_degrees=False, normalization_config=None
+            )
+        else:
+            raise e
 
 
 @lru_cache(maxsize=20)
@@ -402,6 +413,16 @@ def extract_expr(match: re.Match, timeout_seconds: int = 5) -> tuple[str | sympy
 def convert_to_pct(number: Number):
     return sympy.Mul(number, sympy.Rational(1, 100), evaluate=False)
 
+
+equation_split_regex = re.compile(r"(?<!\\|\<|\!|\>)=")
+def get_last_eq(latex: str):
+    # This is to ensure that a=1,b=2 is not splitted
+    if not "," in latex and not ";" in latex:
+        eq_parts = equation_split_regex.split(latex)
+        # We only shorten if there are more than 2 parts, otherwise we keep equation as is
+        if len(eq_parts) > 2:
+            return eq_parts[-1]
+    return latex
 
 @lru_cache(maxsize=20)
 def extract_latex(match: re.Match, latex_config: LatexExtractionConfig, timeout_seconds: int) -> tuple[sympy.Expr | str | None, str]:

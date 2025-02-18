@@ -52,7 +52,7 @@ def compare_strings(
 
     gold_parsed = parse(gold, extraction_targets)
     pred_parsed = parse(pred, extraction_targets)
-    return verify(gold_parsed, pred_parsed, precision, strict)
+    return verify(gold_parsed, pred_parsed, float_rounding=precision, strict=strict)
 
 
 
@@ -442,6 +442,11 @@ def test_latex_notation_math(gold, pred, expected):
             "$0$",
             0,
         ),
+        (
+            "$1 = \\zzz = x = 0$",
+            "$0$",
+            1,
+        ),
     ],
 )
 def test_relations_math(gold, pred, expected):
@@ -505,12 +510,12 @@ def test_matrix_extraction(gold, pred, expected):
 
 
 def test_precision():
-    assert sympy_expr_eq(sympy.Rational(1, 3), sympy.Float(0.333), precision=3)
-    assert not sympy_expr_eq(sympy.Rational(1, 3), sympy.Float(0.333), precision=4)
+    assert sympy_expr_eq(sympy.Rational(1, 3), sympy.Float(0.333), float_rounding=3, numeric_precision=15)
+    assert not sympy_expr_eq(sympy.Rational(1, 3), sympy.Float(0.333), float_rounding=4, numeric_precision=15)
 
     # It should work with more nuanced pairs
-    assert sympy_expr_eq(sympy.Rational(1, 3) + 1, sympy.Float(1.333), precision=3)
-    assert not sympy_expr_eq(sympy.Rational(1, 3) + 1, sympy.Float(1.333), precision=4)
+    assert sympy_expr_eq(sympy.Rational(1, 3) + 1, sympy.Float(1.333), float_rounding=3, numeric_precision=15)
+    assert not sympy_expr_eq(sympy.Rational(1, 3) + 1, sympy.Float(1.333), float_rounding=4, numeric_precision=15)
 
     # From latex
     assert compare_strings("$\\frac{1}{3}$", "0.3333$", match_types=["latex", "expr"], precision=4) == 1

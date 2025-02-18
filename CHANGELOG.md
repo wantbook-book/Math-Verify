@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0]
+- Added support for setting numeric precision for numeric evaluation
+- Fixed bug with expression with =
+- Deprecated `equations` parameter in `NormalizationConfig`, as it is now handled by the parser
+- Fixed processing of Assignment relations
+- Bumped latex2sympy2_extended to 1.0.9
+
 ## [0.5.4]
 - Added logging to grader and parser
 - Fixed bug with imports of antlr4 runtime

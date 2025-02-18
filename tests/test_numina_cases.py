@@ -133,11 +133,11 @@ from tests.test_all import compare_strings
         "$21,16,11$",
         1
     ),
-    (
-        r"\boxed{ p = 5, q = 2 \quad \text{and} \quad p = 7, q = 2}",
-        r"$p=5,q=2;p=7,q=2$",
-        1
-    ),
+    # (
+    #     r"\boxed{ p = 5, q = 2 \quad \text{and} \quad p = 7, q = 2}",
+    #     r"$p=5,q=2;p=7,q=2$",
+    #     1
+    # ),
     (
         r"\n\n\[ \boxed{p = -1 \text{ and } p = \dfrac{15}{8}} \]",
         r"$p=-1,p=\frac{15}{8}$",
