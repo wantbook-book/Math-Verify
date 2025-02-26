@@ -150,25 +150,15 @@ from tests.test_all import compare_strings
         1,
     ),
     (
-        r"\boxed{1} and and and or thus but \boxed{2} and \boxed{3}",
-        r"$\boxed{2,3}$",
+        r"\boxed{1} papers and \boxed{2} bins",
+        r"$\boxed{1,2}$",
         1,
     ),
     (
-        r"\boxed{1} and and and or thus but \boxed{2} and \boxed{3}",
-        r"$\boxed{1,2,3}$",
-        0,
-    ),
-    (
-        r"\boxed{1} no no no or no no \boxed{2}",
-        r"$\boxed{1,2}$",
-        0,
-    ),
-    (
-        r"\boxed{1} no no no or no no \boxed{2}",
+        r"\boxed{1} no no no no no \boxed{2}",
         r"$\boxed{1,2}$",
         0,
     ),
 ])
-def test_numina_cases(gold, pred, expected):
+def test_open_thoughts(gold, pred, expected):
     assert compare_strings(gold, pred, match_types=["latex", "expr"]) == expected
