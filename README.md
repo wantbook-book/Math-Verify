@@ -212,8 +212,8 @@ As we are rewarding a model, we want to enforce that it produces a fully valid L
   - Multi-line latex expressions
   - `\[ ... \]`
   - `$$ ... $$`
-  - Single line latex expressions
   - `\boxed{...}`
+  - Single line latex expressions
   - `$...$`
   - `\( ... \)`
   - `[ ... ]`
