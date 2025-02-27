@@ -1,6 +1,6 @@
 [project]
 name = "math-verify"
-version = "0.6.1"
+version = "0.7.0"
 description = "HuggingFace library for verifying mathematical answers"
 authors = [
     { name = "Hynek Kydlíček", email = "hynek.kydlicek@huggingface.co" }
