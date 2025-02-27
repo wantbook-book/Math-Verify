@@ -44,7 +44,6 @@ The parser supports three main extraction targets:
 
 By default, the parser uses both LatexExtractionConfig and ExprExtractionConfig for maximum flexibility in extracting mathematical expressions from model outputs.
 
-
 ## Why Another Math Evaluator?
 
 Existing math evaluators often fail to correctly assess model outputs due to:
@@ -173,3 +172,48 @@ Answer Extraction -> Expression Common Representation Conversion (SymPy) -> Gold
       - Timeout protection for long computations
       - Graceful fallback for failed comparisons
       - Multiple comparison attempts with different methods
+
+
+## FAQ
+
+### Why is verify function not symmetric?
+
+The verify funciton, doesn't have symmetric behavior in two cases:
+
+**1. Representation Asymmetry (Interval vs. Inequality):**
+- If the gold answer is an inequality (e.g., `1 < x < 2`) and the prediction is an interval (e.g., `(1,2)`), the verification will return `True`.
+- However, if the gold answer is an interval (e.g., `(1,2)`) and the prediction is the inequality (e.g., `1 < x < 2`), it will return `False`.
+- This asymmetry is designed to prevent models from simply returning the input inequality when an, which could be considered a form of "reward hacking".
+
+**2. Solution Context Asymmetry (Number vs. Solution Chain):**
+- If the gold answer is a number (e.g., `101`) and the prediction is a solution chain leading to that number (e.g., `a+2z = 2z + a = 101`), the verification will return `True`.
+- Conversely, if the gold answer is a solution chain (e.g., `a+2z = 2z + a = 101`) and the prediction is just the final number (e.g., `101`), it will return `False`.
+- Determining whether we are evaluating an equation or a solution chain is complex. The `verify` function uses the gold answer as a guide. It assumes gold answers are "cleaned" in a preferred format.
+
+
+### What setting I should use for my dataset?
+- First you should determine what your dataset gold looks like. If it's just a simple numbers, use `ExprExtractionConfig()`. If it's latex, use `LatexExtractionConfig()`. If the gold answer contain floats, make sure to set correct float precision. Lastly if it's just MCQ strings (A,B,B,D), use `StringExtractionConfig()`.
+
+- For prediction, we recommend using `LatexExtractionConfig()` and `ExprExtractionConfig()` together unless you have control over the model output. Additionally, we recommended instructing the model to output the answer in a `\boxed{}` environment and set `boxed_match_priority` to 0 in the latex extraction config.
+
+- For reward verification, we recommend further using the following normalization configuration of latex extraction config for prediction:
+  - `basic_latex=True`
+  - `units=True`
+  - `malformed_operators=False`
+  - `nits=False`
+  - `boxed="all"`
+  - `equations=False`
+As we are rewarding a model, we want to enforce that it produces a fully valid LaTeX answer.
+
+- We don't recommend mixing `StringExtractionConfig()` with other configs, as it might produce unexpected results. Especially when you are searching for A/B/C/D type of answer, because we are taking the first match, it will often find separate A, B, C, or D characters in the text, which is probably not desired.
+
+### Why is the latex extraction not working?
+- It's important that all latex epxressions are placed in latex environment. For example, `\[ x = 1 \]` is valid, but `x = 1` will not extract anything. Following environments are supported:
+  - Multi-line latex expressions
+  - `\[ ... \]`
+  - `$$ ... $$`
+  - Single line latex expressions
+  - `\boxed{...}`
+  - `$...$`
+  - `\( ... \)`
+  - `[ ... ]`

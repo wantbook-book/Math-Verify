@@ -313,6 +313,9 @@ def sympy_compare_relational(
             sympy_compare_relational(g, p, float_rounding, numeric_precision)
             for g, p in zip(gold._unsorted_args, pred._unsorted_args)
         )
+    
+    elif not isinstance(gold, Relational) or not isinstance(pred, Relational):
+        return False
 
     # Helper to check if expressions are equivalent when flipped
     def are_flipped_inequalities_equal(a: Relational, b: Relational) -> bool:
