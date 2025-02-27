@@ -1,8 +1,20 @@
 # Changelog
 
-## [0.6.2-pre]
+## [0.7.0]
+### Added
+- Added CITATION.cff file with library metadata
+- Ensure And don't throw an error on comparisson
+
+### Changed
+- Simplified joining of multiple boxed expressions
+- Improved assignment resoluion
+- Improved handling of And instances in `sympy_compare_relational`
+- Qol changes (formatting, etc)
+
+## [0.6.2]
+### Changed
 - Made parsing timeout to be global not per extraction to avoid too long extraction time
-- Changed timeout exception to be a custom exception so that it won't be caught by the default exception handler
+- Changed timeout exception to be a custom exception to prevent default exception handler catching
 - Fixed bug with 0,xxx not being parsed as float
 
 ## [0.6.0]
