@@ -1,5 +1,6 @@
 import pytest
-from math_verify import parse, StringExtractionConfig, verify
+from math_verify import parse, verify
+
 
 @pytest.mark.parametrize(
     "gold, pred, result",
@@ -10,8 +11,16 @@ from math_verify import parse, StringExtractionConfig, verify
         ("$n=2, 3, 4$", "$n=1, 2, 3$", 0),
         ("$D = (0, 1)$", "$D = (0, 1)$", 1),
         ("$D = (0, 1)$", "$D = (0, 1.5)$", 0),
-        ("$F_n = \\sum_{k=0}^{n-1} F_k F_{n-k-1}$", "$F_n = \\sum_{k=0}^{n-2} F_k F_{n-k-2}$", 0),
-        ("$F_n = \\sum_{k=0}^{n-1} F_k F_{n-k-1}$", "$F_n = \\sum_{k=0}^{n-1} F_{n-k-1} F_k$", 1),
+        (
+            "$F_n = \\sum_{k=0}^{n-1} F_k F_{n-k-1}$",
+            "$F_n = \\sum_{k=0}^{n-2} F_k F_{n-k-2}$",
+            0,
+        ),
+        (
+            "$F_n = \\sum_{k=0}^{n-1} F_k F_{n-k-1}$",
+            "$F_n = \\sum_{k=0}^{n-1} F_{n-k-1} F_k$",
+            1,
+        ),
         ("$19, 46, and 82$", "$19, 46, \\text{ and } 82$", 1),
         ("$19, 46, and 82$", "$21, 36, and 82$", 0),
         ("$1 - \\frac{1}{\\mathrm{e}}$", "$1 - \\frac{1}{\\mathrm{e}}$", 1),

@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 # Heavily inspired by https://github.com/QwenLM/Qwen2.5-Math and https://github.com/huggingface/lm-evaluation-harness
-from functools import lru_cache
 import logging
 import re
 from itertools import product
@@ -31,7 +30,6 @@ from latex2sympy2_extended.sets import FiniteSet
 from sympy import (
     E,
     Basic,
-    EmptySet,
     Eq,
     Float,
     GreaterThan,
@@ -313,14 +311,16 @@ def sympy_compare_relational(
             sympy_compare_relational(g, p, float_rounding, numeric_precision)
             for g, p in zip(gold._unsorted_args, pred._unsorted_args)
         )
-    
+
     elif not isinstance(gold, Relational) or not isinstance(pred, Relational):
         return False
 
     # Helper to check if expressions are equivalent when flipped
     def are_flipped_inequalities_equal(a: Relational, b: Relational) -> bool:
         try:
-            return sympy_expr_eq(a.lhs - a.rhs, b.rhs - b.lhs, float_rounding, numeric_precision)  # type: ignore
+            return sympy_expr_eq(
+                a.lhs - a.rhs, b.rhs - b.lhs, float_rounding, numeric_precision
+            )  # type: ignore
         except Exception:
             pass
         return False
@@ -328,13 +328,15 @@ def sympy_compare_relational(
     # Same type of relation (e.g. both <= or both >=)
 
     try:
-        if type(gold) == type(pred) and sympy_expr_eq(gold.lhs - gold.rhs, pred.lhs - pred.rhs, float_rounding, numeric_precision):  # type: ignore
+        if type(gold) is type(pred) and sympy_expr_eq(
+            gold.lhs - gold.rhs, pred.lhs - pred.rhs, float_rounding, numeric_precision
+        ):  # type: ignore
             return True
     except Exception:
         pass
 
     # Check flipped inequalities (a <= b equals b >= a)
-    if INVERSE_RELATIONS[type(gold)] == type(pred) and are_flipped_inequalities_equal(
+    if INVERSE_RELATIONS[type(gold)] is type(pred) and are_flipped_inequalities_equal(  # type: ignore
         gold, pred
     ):
         return True
@@ -805,13 +807,13 @@ def verify(
     def compare_single_extraction_wrapper(g, t):
         try:
             return compare_single_extraction(g, t)
-        except Exception as e:
+        except Exception:
             #! Do not attempt to print out the g and t during handling of exception
             # Because a) it can throw an exception itself and b) it can cause it to be stuck forever during str conversion
-            logger.exception(f"Error during comparison")
+            logger.exception("Error during comparison")
             return False
         except TimeoutException:
-            logger.error(f"Timeout during comparison")
+            logger.error("Timeout during comparison")
             return False
 
     if not isinstance(gold, list):

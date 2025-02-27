@@ -1,6 +1,7 @@
 import pytest
 from math_verify import parse, StringExtractionConfig
 
+
 @pytest.mark.parametrize(
     "pred,expected,config",
     [
@@ -17,7 +18,6 @@ from math_verify import parse, StringExtractionConfig
         # Test space truncate
         # Test different strings
         ("The answer is U.", ["u", "U"], StringExtractionConfig(strings=("U",))),
-
         # Test any plain string
         ("Because B is valid", ["b", "B"], StringExtractionConfig()),
     ],

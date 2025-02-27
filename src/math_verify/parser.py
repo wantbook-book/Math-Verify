@@ -38,9 +38,9 @@ from latex2sympy2_extended.latex2sympy2 import (
     latex2sympy,
 )
 from math_verify.utils import timeout
-from latex2sympy2_extended.latex2sympy2 import NormalizationConfig
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,11 +50,11 @@ class LatexExtractionConfig:
 
     Attributes:
         try_extract_without_anchor (bool): Whether to try extracting latex without requiring specific anchors like "answer:" or "final answer is"
-        boxed_match_priority (int): Priority for matching boxed expressions (e.g., \boxed{}). 
+        boxed_match_priority (int): Priority for matching boxed expressions (e.g., \boxed{}).
             - 0: Highest priority (matched first)
             - 50: Default priority (matched after final answer patterns)
             - -1: Disable boxed expression matching
-        normalization_config (NormalizationConfig): Configuration for LaTeX normalization. 
+        normalization_config (NormalizationConfig): Configuration for LaTeX normalization.
             Controls preprocessing of LaTeX expressions including:
             - Basic LaTeX cleanup
             - Unit handling
@@ -88,6 +88,7 @@ class ExprExtractionConfig:
 
     try_extract_without_anchor: bool = True
 
+
 @dataclass(frozen=True)
 class StringExtractionConfig:
     """Config for extracting literal strings.
@@ -104,30 +105,37 @@ class StringExtractionConfig:
 
 ExtractionTarget = LatexExtractionConfig | ExprExtractionConfig | StringExtractionConfig
 
+
 @lru_cache(maxsize=10)
-def lazy_string_regex(string_extraction_config: StringExtractionConfig) -> list[tuple[re.Pattern[str], int]]:
+def lazy_string_regex(
+    string_extraction_config: StringExtractionConfig,
+) -> list[tuple[re.Pattern[str], int]]:
     # First get indices to predict
     string_keys = f"(?P<string_keys>{'|'.join([re.escape(i) for i in string_extraction_config.strings])})"
 
     # The strings are either surrounded with <space>**answer**., or '<space>answer.' or the same without the dot
-    full_stop_re = rf"\."
-    comma_re = rf","
-    colon_re = rf":"
-    space_re = rf"\s"
+    full_stop_re = r"\."
+    comma_re = r","
+    colon_re = r":"
+    space_re = r"\s"
 
     answer_prefix_re = rf"(^|{space_re})(?:\*\*)?"
-    answer_suffix_re = rf"(?:\*\*)?(?:{full_stop_re}|{comma_re}|{colon_re}|{space_re}|$)"
+    answer_suffix_re = (
+        rf"(?:\*\*)?(?:{full_stop_re}|{comma_re}|{colon_re}|{space_re}|$)"
+    )
     answer_re = f"{answer_prefix_re}{string_keys}{answer_suffix_re}"
     answer_re_start = rf"^(?:\*\*)?{string_keys}{answer_suffix_re}"
 
-    answer_word = f"(?i:answer)"
+    answer_word = "(?i:answer)"
 
     regexes = []
 
     final_answer_prefixed_re = rf"(?i:final answer is)\:?\s*{string_keys}\.?\s?I hope"
 
     # To allow stuff like "final answer is to your question"
-    final_answer_prefixed_just_is = rf"(?i:final answer.{{0,100}}?)\s+is\:?\s*{string_keys}"
+    final_answer_prefixed_just_is = (
+        rf"(?i:final answer.{{0,100}}?)\s+is\:?\s*{string_keys}"
+    )
     regexes.extend(
         [
             (final_answer_prefixed_re, 0),
@@ -182,10 +190,10 @@ def lazy_expr_regex(
     )
 
     # Punctuation regexes
-    full_stop_re = rf"\."
-    comma_re = rf","
-    colon_re = rf":"
-    space_re = rf"\s"
+    full_stop_re = r"\."
+    comma_re = r","
+    colon_re = r":"
+    space_re = r"\s"
 
     currency_units = re.escape("$€£¥₹₽₪₩₫฿₡₢₣₤₥₦₧₨₩₪₫₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿")
     expr_prefix_re = rf"(?:^|{space_re}|\=)(?:\*\*)?"
@@ -208,7 +216,7 @@ def lazy_expr_regex(
     regexes.append((final_answer_prefixed_re, 0))
     regexes.append((final_answer_prefixed_just_is, 50))
 
-    answer_prefix_re = rf"(?i:answer)"
+    answer_prefix_re = r"(?i:answer)"
 
     # Match after the last equals with answer word - require the number pattern,
     equals_re_colon = rf"{answer_prefix_re}{colon_re}(?:.{{0,100}}=\s*|.{{0,50}}?){expr_or_number}(?!\s*=)"
@@ -225,21 +233,23 @@ def lazy_expr_regex(
     return [(re.compile(pattern), priority) for pattern, priority in regexes]
 
 
-def make_latex_env_pattern(prefix: str = "", context: Literal["boxed", "plain"] = "plain") -> str:
+def make_latex_env_pattern(
+    prefix: str = "", context: Literal["boxed", "plain"] = "plain"
+) -> str:
     """Creates a LaTeX environment pattern with uniquely prefixed group names.
-    
+
     Args:
         prefix (str): Prefix to add to group names to make them unique
         context (Literal["boxed", "plain", "fraction"]): Type of content to match inside the environments
             - "boxed": Match environments containing \boxed{...}
             - "plain": Match any LaTeX content
             - "fraction": Match only fractions
-        
+
     Returns:
         str: Regex pattern for matching LaTeX environments with percent suffix
     """
     percent_re_group = rf"(?P<{prefix}percent>(?:\\?%|[Pp]ercent|[Pp]ercentage|[Pp]ct))"
-    
+
     # Define base content patterns
     display_dollar_content = r"(?:[^$]|\$(?!\$))"
     # Either \ not followed by ] or everything but \
@@ -247,7 +257,7 @@ def make_latex_env_pattern(prefix: str = "", context: Literal["boxed", "plain"] 
     inline_dollar_content = r"(?:\\[$]|[^\n$])"
     inline_content_parenthesis = r"(?:[^\\\n]|\\(?!\)))"
     inline_content_bracket = r"[^\n\]\[]"
-    
+
     if context == "boxed":
         # Rewrite patterns to optionally include boxed content
         display_dollar_content = rf"{display_dollar_content}*?\\boxed{{{display_dollar_content}+?}}{display_dollar_content}*?"
@@ -261,7 +271,7 @@ def make_latex_env_pattern(prefix: str = "", context: Literal["boxed", "plain"] 
         inline_dollar_content = rf"{inline_dollar_content}+?"
         inline_content_parenthesis = rf"{inline_content_parenthesis}+?"
         inline_content_bracket = rf"{inline_content_bracket}+?"
-    
+
     # Build list of regex patterns
     patterns = [
         # Display math environments (allow multiline)
@@ -274,12 +284,15 @@ def make_latex_env_pattern(prefix: str = "", context: Literal["boxed", "plain"] 
     ]
     if context == "plain":
         simple_number = r"-?\d+(?:[.,]\d+)?"
-        patterns.append(rf"(?P<{prefix}latexFraction>-?\\frac{{{simple_number}}}{{{simple_number}}})")
-    
+        patterns.append(
+            rf"(?P<{prefix}latexFraction>-?\\frac{{{simple_number}}}{{{simple_number}}})"
+        )
+
     # Join patterns with | and wrap in parentheses
     latex_env_re = rf"(?:(?:{'|'.join(patterns)})\s*{percent_re_group}?)"
-    
+
     return latex_env_re
+
 
 @lru_cache(maxsize=1)
 def lazy_latex_regex(
@@ -287,12 +300,17 @@ def lazy_latex_regex(
 ) -> list[tuple[re.Pattern[str], int]]:
     # Pattern for multiple latex environments connected by and/or (also considering oxford comma)
     # Create patterns for up to 5 connected expressions
-    first_latex_group = make_latex_env_pattern('first_')
-    next_groups = ''.join([rf"(?:\s*(?:,?and|,?or|,)\s*{make_latex_env_pattern(f'next{i}_')})?" for i in range(1, 6)])
-    
+    first_latex_group = make_latex_env_pattern("first_")
+    next_groups = "".join(
+        [
+            rf"(?:\s*(?:,?and|,?or|,)\s*{make_latex_env_pattern(f'next{i}_')})?"
+            for i in range(1, 6)
+        ]
+    )
+
     latex_envs_re = rf"(?:{first_latex_group}{next_groups})"
-    colon_re = rf":"
-    answer_prefix_re = rf"(?i:answer)"
+    colon_re = r":"
+    answer_prefix_re = r"(?i:answer)"
 
     # We first match boxed env, for some reason that's the most common case of output
     # Then we match the latex with environments, then we try to match the fraction
@@ -317,13 +335,20 @@ def lazy_latex_regex(
 
     # This ensures that boxed is matched right after the final answer xxxx
     if latex_config.boxed_match_priority >= 0:
-        latex_re_boxed = make_latex_env_pattern(prefix='first_', context='boxed')
-        next_groups = ''.join([rf"\s*(?:\s*(?:,?and|,?or|,)\s*{make_latex_env_pattern(f'next{i}_', context='boxed')})?" for i in range(1, 6)])
+        latex_re_boxed = make_latex_env_pattern(prefix="first_", context="boxed")
+        next_groups = "".join(
+            [
+                rf"\s*(?:\s*(?:,?and|,?or|,)\s*{make_latex_env_pattern(f'next{i}_', context='boxed')})?"
+                for i in range(1, 6)
+            ]
+        )
         latex_re_boxed = rf"{latex_re_boxed}{next_groups}"
         regexes.append((latex_re_boxed, latex_config.boxed_match_priority))
         # Match plain boxed, the issue with plain boxed is that it's impossible to know where it stops, so if there are
         # till last }. We do the actuall extraction in the normalization step.
-        regexes.append((rf"(?P<first_latexBoxed>\\boxed{{.+}})", latex_config.boxed_match_priority))
+        regexes.append(
+            (r"(?P<first_latexBoxed>\\boxed{.+})", latex_config.boxed_match_priority)
+        )
 
     return [(re.compile(pattern, re.DOTALL), priority) for pattern, priority in regexes]
 
@@ -337,9 +362,11 @@ def get_extraction_regexes(
         (
             (lazy_latex_regex(target_type), target_type)
             if isinstance(target_type, LatexExtractionConfig)
-            else (lazy_expr_regex(target_type), target_type)
-            if isinstance(target_type, ExprExtractionConfig)
-            else (lazy_string_regex(target_type), target_type)
+            else (
+                (lazy_expr_regex(target_type), target_type)
+                if isinstance(target_type, ExprExtractionConfig)
+                else (lazy_string_regex(target_type), target_type)
+            )
         )
         for target_type in target_types
     ]
@@ -352,14 +379,20 @@ def parse_latex_cached(latex: str):
     # First try to parse the latex as is
     try:
         return latex2sympy(
-            latex, is_real=not should_treat_as_complex(latex), convert_degrees=False, normalization_config=None
+            latex,
+            is_real=not should_treat_as_complex(latex),
+            convert_degrees=False,
+            normalization_config=None,
         )
     except Exception as e:
         # If that fails, try to parse just the last equation
         last_eq_latex = get_last_eq(latex)
         if last_eq_latex != latex:
             return latex2sympy(
-                last_eq_latex, is_real=not should_treat_as_complex(last_eq_latex), convert_degrees=False, normalization_config=None
+                last_eq_latex,
+                is_real=not should_treat_as_complex(last_eq_latex),
+                convert_degrees=False,
+                normalization_config=None,
             )
         else:
             raise e
@@ -416,53 +449,70 @@ def convert_to_pct(number: Number):
 
 
 equation_split_regex = re.compile(r"(?<!\\|\<|\!|\>)=")
+
+
 def get_last_eq(latex: str):
     # This is to ensure that a=1,b=2 is not splitted
-    if not "," in latex and not ";" in latex:
+    if "," not in latex and ";" not in latex:
         eq_parts = equation_split_regex.split(latex)
         # We only shorten if there are more than 2 parts, otherwise we keep equation as is
         if len(eq_parts) > 2:
             return eq_parts[-1]
     return latex
 
+
 @lru_cache(maxsize=20)
-def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple[sympy.Expr | str | None, str]:
+def extract_latex(
+    match: re.Match, latex_config: LatexExtractionConfig
+) -> tuple[sympy.Expr | str | None, str]:
     latex_exprs = []
     latex_strs = []
-    
+
     # Get all latex groups (both first_ and nextN_ prefixes)
     first_latex_group = next(
-        ((val, name) for name, val in match.groupdict().items() if name.startswith("first_latex") and val),
-        None
+        (
+            (val, name)
+            for name, val in match.groupdict().items()
+            if name.startswith("first_latex") and val
+        ),
+        None,
     )
-    
+
     # Get all nextN_ groups
     next_latex_groups = [
         next(
-            ((val, name) for name, val in match.groupdict().items() if name.startswith(f"next{i}_latex") and val),
-            None
+            (
+                (val, name)
+                for name, val in match.groupdict().items()
+                if name.startswith(f"next{i}_latex") and val
+            ),
+            None,
         )
         for i in range(1, 6)
     ]
-    
-    all_latex = list(filter(lambda x: x is not None, [first_latex_group] + next_latex_groups))
-    
+
+    all_latex = list(
+        filter(lambda x: x is not None, [first_latex_group] + next_latex_groups)
+    )
+
     for latex, name in all_latex:
-        name_without_prefix = name.split('_')[0]
-        group_name = name.split('_')[1] if len(name.split('_')) > 1 else None
-        is_percentage = True if match.groupdict().get(f"{name_without_prefix}_percent") else False
-        
+        name_without_prefix = name.split("_")[0]
+        group_name = name.split("_")[1] if len(name.split("_")) > 1 else None
+        is_percentage = (
+            True if match.groupdict().get(f"{name_without_prefix}_percent") else False
+        )
+
         # Use modified config if group name is 'boxed'
         config = latex_config.normalization_config
-        if group_name == 'latexBoxed':
+        if group_name == "latexBoxed":
             config = replace(config, boxed="last")  # Use replace to modify single field
-            
+
         normalized_latex = normalize_latex(
             latex,
             config=config,
         )
         latex_strs.append(normalized_latex)
-        
+
         try:
             parsed_latex = parse_latex_cached(normalized_latex)
             if is_percentage:
@@ -471,10 +521,10 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple
         except Exception:
             latex_exprs.append(None)
             pass
-    
+
     if not latex_exprs:
         return None, ""
-    
+
     # If we have multiple expressions and all of them are parsed, wrap them in a Tuple
     if len(latex_exprs) > 1 and all(expr is not None for expr in latex_exprs):
         # To handle solution is: 1,2 and 3
@@ -485,7 +535,7 @@ def extract_latex(match: re.Match, latex_config: LatexExtractionConfig) -> tuple
             else:
                 all_elements.append(expr)
         return FiniteSet(*all_elements), " and ".join(latex_strs)
-    
+
     # Otherwise return the single expression
     return latex_exprs[0], latex_strs[0]
 
@@ -555,7 +605,9 @@ def extract_target_from_pred(
     # Group patterns by priority using itertools.groupby
     match_found = False
     sorted_patterns = sorted(all_patterns, key=lambda x: x[2])
-    grouped_patterns = list((gr, list(val)) for gr, val in groupby(sorted_patterns, key=lambda x: x[2]))
+    grouped_patterns = list(
+        (gr, list(val)) for gr, val in groupby(sorted_patterns, key=lambda x: x[2])
+    )
     for _, patterns_group in grouped_patterns:
         # Find all matches for each pattern in this priority group
         matches_with_pos = (
@@ -611,7 +663,7 @@ def parse(
 
     Args:
         pred (str): The prediction string to parse.
-        extraction_config (Sequence[ExtractionTarget], optional): Configuration for what types of expressions 
+        extraction_config (Sequence[ExtractionTarget], optional): Configuration for what types of expressions
             to extract and how to extract them. Defaults to [LatexExtractionConfig(), ExprExtractionConfig()].
         fallback_mode (Literal["no_fallback", "first_match"], optional): How to handle extraction failures. Defaults to "first_match".
             - "no_fallback": Return only successfully parsed expressions
@@ -637,7 +689,12 @@ def parse(
     """
     try:
         target_res = get_extraction_regexes(extraction_config)
-        return timeout(timeout_seconds=parsing_timeout)(extract_target_from_pred)(pred, target_res, fallback_mode=fallback_mode, extraction_mode=extraction_mode)
+        return timeout(timeout_seconds=parsing_timeout)(extract_target_from_pred)(
+            pred,
+            target_res,
+            fallback_mode=fallback_mode,
+            extraction_mode=extraction_mode,
+        )
     except Exception:
         logger.exception(f"Error parsing: {pred}")
         return []

@@ -64,7 +64,6 @@ def process_answers(df: pd.DataFrame, gold_is_latex: bool) -> pd.DataFrame:
         gold_extraction_target=(LatexExtractionConfig() if gold_is_latex else ExprExtractionConfig(),),
         pred_extraction_target=(ExprExtractionConfig(), LatexExtractionConfig()),
         aggregation_function=max,
-        fallback_mode="first_match",
         precision=6
     )
     

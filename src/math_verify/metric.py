@@ -1,22 +1,21 @@
 ## Parser definition
 import logging
 from math_verify.grader import verify
-from math_verify.parser import ExprExtractionConfig, ExtractionTarget, extract_target_from_pred, get_extraction_regexes, parse
+from math_verify.parser import ExprExtractionConfig, ExtractionTarget, parse
 from math_verify.utils import timeout
+from typing import Callable, Optional, Sequence
 
 logger = logging.getLogger(__name__)
-
-
-from typing import Callable, Literal, Optional, Sequence
 
 
 def math_metric(
     gold_extraction_target: Sequence[ExtractionTarget] = (ExprExtractionConfig(),),
     pred_extraction_target: Sequence[ExtractionTarget] = (ExprExtractionConfig(),),
     aggregation_function: Callable[[list[float]], float] = max,
-    fallback_mode: Literal["no_fallback", "first_match"] = "first_match",
     precision: int = 6,
-) -> Callable[[list[str], list[str]], tuple[float, Optional[tuple[list[str], list[str]]]]]:
+) -> Callable[
+    [list[str], list[str]], tuple[float, Optional[tuple[list[str], list[str]]]]
+]:
     """Creates a language-aware extractive match metric that extracts answers from the model's output.
 
     Known issues:
@@ -49,12 +48,13 @@ def math_metric(
     def get_str_preds_with_timeout(
         extracted_predictions: list[list[str]], extracted_golds: list[list[str]]
     ) -> tuple[list[str], list[str]]:
-
         golds = [str(gold) for golds in extracted_golds for gold in golds]
         predictions = [str(pred) for preds in extracted_predictions for pred in preds]
         return (golds, predictions)
 
-    def sample_level_fn(golds: list[str], predictions: list[str]) -> tuple[float, Optional[tuple[list[str], list[str]]]]:
+    def sample_level_fn(
+        golds: list[str], predictions: list[str]
+    ) -> tuple[float, Optional[tuple[list[str], list[str]]]]:
         extracted_predictions = [
             parse(pred, pred_extraction_target) for pred in predictions
         ]
@@ -62,7 +62,9 @@ def math_metric(
 
         # Assert on empty gold and warn on empty pred
         if any(len(g) == 0 for g in extracted_golds):
-            raise ValueError(f"No gold targets found for at least one gold. Gold: {golds}, Pred: {predictions}")
+            raise ValueError(
+                f"No gold targets found for at least one gold. Gold: {golds}, Pred: {predictions}"
+            )
 
         if all(len(p) == 0 for p in extracted_predictions):
             logger.warning(
@@ -72,14 +74,24 @@ def math_metric(
         # We have to use timeout because the sypmy to str conversion can be very slow
         str_preds = None
         try:
-            str_preds = get_str_preds_with_timeout(extracted_predictions, extracted_golds)
+            str_preds = get_str_preds_with_timeout(
+                extracted_predictions, extracted_golds
+            )
         except Exception:
-            logger.warning("Timeout when adding extracted predictions and golds to specific")
+            logger.warning(
+                "Timeout when adding extracted predictions and golds to specific"
+            )
 
         return (
             aggregation_function(
                 [
-                    (1.0 if any(verify(gold, pred, precision) for gold in extracted_golds) else 0.0)
+                    (
+                        1.0
+                        if any(
+                            verify(gold, pred, precision) for gold in extracted_golds
+                        )
+                        else 0.0
+                    )
                     for pred in extracted_predictions
                 ]
             ),
