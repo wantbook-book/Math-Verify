@@ -192,7 +192,7 @@ The verify funciton, doesn't have symmetric behavior in two cases:
 
 
 ### What setting I should use for my dataset?
-- First you should determine what your dataset gold looks like. If it's just a simple numbers, use `ExprExtractionConfig()`. If it's latex, use `LatexExtractionConfig()`. If the gold answer contain floats, make sure to set correct float precision. Lastly if it's just MCQ strings (A,B,B,D), use `StringExtractionConfig()`.
+- First you should determine what your dataset gold looks like. If it's just a simple numbers, use `ExprExtractionConfig()`. If it's latex, use `LatexExtractionConfig()`. If the gold answer contain floats, make sure to set correct float precision. Lastly if it's just MCQ strings (A,B,C,D), use `StringExtractionConfig()`.
 
 - For prediction, we recommend using `LatexExtractionConfig()` and `ExprExtractionConfig()` together unless you have control over the model output. Additionally, we recommended instructing the model to output the answer in a `\boxed{}` environment and set `boxed_match_priority` to 0 in the latex extraction config.
 
