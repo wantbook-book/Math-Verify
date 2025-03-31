@@ -24,12 +24,13 @@
 import logging
 import re
 from itertools import product
-from math_verify.errors import TimeoutException
 
+from latex2sympy2_extended import is_expr_of_only_symbols
+from latex2sympy2_extended.logic import And
 from latex2sympy2_extended.sets import FiniteSet
 from sympy import (
-    E,
     Basic,
+    E,
     Eq,
     Float,
     GreaterThan,
@@ -46,20 +47,22 @@ from sympy import (
     Symbol,
     Tuple,
     default_sort_key,
+    nan,
     ordered,
     simplify,
-    nan,
     solve,
     zoo,
 )
-from latex2sympy2_extended.logic import And
-from sympy.core.relational import Relational
-from sympy.core.function import UndefinedFunction
 from sympy import FiniteSet as SympyFiniteSet
+from sympy.core.function import UndefinedFunction
+from sympy.core.relational import Relational
+
+from math_verify.errors import TimeoutException
 from math_verify.utils import timeout
-from latex2sympy2_extended import is_expr_of_only_symbols
 
 logger = logging.getLogger(__name__)
+
+TIMEOUT_WARNING_SHOWN = False
 
 
 INVERSE_RELATIONS = {
@@ -144,7 +147,7 @@ def sympy_numeric_eq(
         ):
             return all(
                 sympy_numeric_eq(a_elem, b_elem, float_rounding, numeric_precision)
-                for a_elem, b_elem in zip(a.flat(), b.flat())
+                for a_elem, b_elem in zip(a.flat(), b.flat(), strict=False)
             )
 
     # Ensure this also works for percentage numbers so that 0.333333% = 0.33333333333 with precision 4
@@ -241,7 +244,7 @@ def sympy_deep_compare_set_and_tuple(
 
         return all(
             sympy_expr_eq(a, b, float_rounding, numeric_precision)
-            for a, b in zip(gold_args, pred_args)
+            for a, b in zip(gold_args, pred_args, strict=False)
         )
 
     return False
@@ -279,9 +282,11 @@ def sympy_solve_and_compare(
             all(
                 g_k == p_k
                 and sympy_expr_eq(g_v, p_v, float_rounding, numeric_precision)
-                for (g_k, g_v), (p_k, p_v) in zip(sorted(g.items()), sorted(p.items()))
+                for (g_k, g_v), (p_k, p_v) in zip(
+                    sorted(g.items()), sorted(p.items()), strict=False
+                )
             )
-            for g, p in zip(sorted(solved_gold), sorted(solved_pred))
+            for g, p in zip(sorted(solved_gold), sorted(solved_pred), strict=False)
         )
     else:
         return sympy_expr_eq(
@@ -309,7 +314,7 @@ def sympy_compare_relational(
     if isinstance(gold, And) and isinstance(pred, And):
         return all(
             sympy_compare_relational(g, p, float_rounding, numeric_precision)
-            for g, p in zip(gold._unsorted_args, pred._unsorted_args)
+            for g, p in zip(gold._unsorted_args, pred._unsorted_args, strict=False)
         )
 
     elif not isinstance(gold, Relational) or not isinstance(pred, Relational):
@@ -614,7 +619,9 @@ def sympy_expr_eq(
             gold_variables = gold.free_symbols
             pred_variables = pred.free_symbols
             if len(gold_variables) == len(pred_variables):
-                pred = pred.subs(list(zip(pred_variables, gold_variables)))
+                pred = pred.subs(
+                    list(zip(pred_variables, gold_variables, strict=False))
+                )
         except Exception:
             pass
 
@@ -727,7 +734,7 @@ def verify(
     float_rounding: int = 6,
     numeric_precision: int = 15,
     strict: bool = True,
-    timeout_seconds: int = 5,
+    timeout_seconds: int | None = 5,
 ) -> bool:
     """Verifies if the target expression matches the gold expression using multiple comparison strategies.
 
@@ -752,7 +759,7 @@ def verify(
             - In strict mode: Variables matter and sets are not comparable with tuples
             - In non-strict mode: Variables are matched by position and sets can be compared with tuples
         timeout_seconds: Maximum time in seconds to spend on any single comparison operation.
-            Defaults to 5 seconds.
+            Defaults to 5 seconds. Any timeout seconds > 0 or not None will result in the function to raise a ValueError if it's called in a threaded environment.
 
     Returns:
         bool: True if target matches gold according to any of the comparison strategies,
@@ -777,6 +784,14 @@ def verify(
         >>> verify(sympy.FiniteSet(1, 2), sympy.Tuple(1, 2), strict=False)  # Set-tuple comparison
         True
     """
+
+    global TIMEOUT_WARNING_SHOWN
+    if not TIMEOUT_WARNING_SHOWN and (timeout_seconds is None or timeout_seconds <= 0):
+        logger.warning(
+            "Timeout is disabled as timeout_seconds is None or <= 0, you must provide \
+                        the logic for timeout interuption yourself to prevent code getting stuck."
+        )
+        TIMEOUT_WARNING_SHOWN = True
 
     @timeout(timeout_seconds=timeout_seconds)
     def compare_single_extraction(
@@ -807,6 +822,15 @@ def verify(
     def compare_single_extraction_wrapper(g, t):
         try:
             return compare_single_extraction(g, t)
+
+        except ValueError as e:
+            if str(e) == "signal only works in main thread of the main interpreter":
+                raise ValueError(
+                    "Math-Verify doesn't support threaded environment due to usage of signal.alarm() in timeout mechanism. If you need to run in multithreaded environment it's recommended to set the parsing_timeout=None, which will run without timeout (and signal handling). In this case you need to handle the timeouting yourself."
+                ) from e
+            else:
+                logger.exception("Error during comparison")
+                return False
         except Exception:
             #! Do not attempt to print out the g and t during handling of exception
             # Because a) it can throw an exception itself and b) it can cause it to be stuck forever during str conversion

@@ -1,14 +1,14 @@
 .PHONY: quality style test
 
-check_dirs := src tests examples
+check_dirs := src examples
 
-format:
+check:
 	ruff check $(check_dirs)  # linter
 	ruff format --check $(check_dirs) # formatter
 
-style:
+format:
 	ruff check --fix $(check_dirs) # linter
-	ruff format $(check_dirs) # formatter
+	black $(check_dirs) # formatter
 
 test:
 	python -m pytest -sv ./tests/

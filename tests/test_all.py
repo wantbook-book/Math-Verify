@@ -23,9 +23,8 @@
 import pytest
 import sympy
 
-from math_verify import parse, verify, LatexExtractionConfig, ExprExtractionConfig
+from math_verify import ExprExtractionConfig, LatexExtractionConfig, parse, verify
 from math_verify.grader import sympy_expr_eq
-
 
 """
 This file contains regression tests for testing evaluation of free-flow generation for math or indices.
