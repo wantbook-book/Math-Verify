@@ -15,6 +15,7 @@ def parse_args():
 def load_csv_data(csv_path: str) -> pd.DataFrame:
     """Load and validate CSV data."""
     try:
+        breakpoint()
         df = pd.read_csv(csv_path)
         required_columns = ['answer', 'gold']
         if not all(col in df.columns for col in required_columns):
